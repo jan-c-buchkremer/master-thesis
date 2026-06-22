@@ -1,0 +1,739 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="41297862-57ae-47d2-8731-c1c0aceb995e" name="Changes" comment="removed legacy naming of docsets">
+      <change beforePath="$PROJECT_DIR$/data/index.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/index.json" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="HTML File" />
+        <option value="JavaScript File" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FlaskConsoleOptions" custom-start-script="import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\nApp: %s [%s]\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))">
+    <envs>
+      <env key="FLASK_APP" value="app" />
+    </envs>
+    <option name="myCustomStartScript" value="import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\nApp: %s [%s]\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))" />
+    <option name="myEnvs">
+      <map>
+        <entry key="FLASK_APP" value="app" />
+      </map>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitLabMergeRequestFiltersHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPENED&quot;,
+    &quot;assignee&quot;: {
+      &quot;type&quot;: &quot;org.jetbrains.plugins.gitlab.mergerequest.ui.filters.GitLabMergeRequestsFiltersValue.MergeRequestsMemberFilterValue.MergeRequestsAssigneeFilterValue&quot;,
+      &quot;username&quot;: &quot;buchkremerj0&quot;,
+      &quot;fullname&quot;: &quot;jan.c.buchkremer&quot;
+    }
+  }
+}</component>
+  <component name="GitLabMergeRequestsSettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;first&quot;: &quot;https://gitlab.informatik.uni-bonn.de/buchkremerj0/master-thesis.git&quot;,
+    &quot;second&quot;: &quot;078585a4-6332-4bfb-bb59-d78a2a1f0934&quot;
+  }
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="343mX0uUAkwRAB7LdpXJyhHetXS" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "Python.CitationNetworkVis.executor": "Run",
+    "Python.DataHandler.executor": "Run",
+    "Python.DocsetData.executor": "Run",
+    "Python.DocumentSetProcessor.executor": "Run",
+    "Python.EmbeddingData.executor": "Run",
+    "Python.LocalLabelingModel.executor": "Run",
+    "Python.OpenRouterTest.executor": "Run",
+    "Python.SaveModel.executor": "Run",
+    "Python.TopicLandscapeVis.executor": "Run",
+    "Python.TopicModeling.executor": "Run",
+    "Python.TopicModelingClusters (1).executor": "Run",
+    "Python.TopicModelingKATI.executor": "Run",
+    "Python.app.executor": "Run",
+    "Python.generate_standalone.executor": "Run",
+    "Python.migrate_legacy_docsets.executor": "Run",
+    "Python.test.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Users/Jan Buchkremer/PycharmProjects/master-thesis/visualisations_new",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.gitlab.GitLabSettingsConfigurable",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Jan Buchkremer\PycharmProjects\master-thesis\visualisations_new" />
+      <recent name="C:\Users\Jan Buchkremer\PycharmProjects\master-thesis" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Jan Buchkremer\PycharmProjects\master-thesis\visualisations\js" />
+      <recent name="C:\Users\Jan Buchkremer\PycharmProjects\master-thesis\visualisations" />
+      <recent name="C:\Users\Jan Buchkremer\PycharmProjects\master-thesis\functions" />
+      <recent name="C:\Users\Jan Buchkremer\PycharmProjects\master-thesis\data\docsets" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.app">
+    <configuration name="DataHandler" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="master-thesis" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/DataHandler.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="DocumentSetProcessor" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="master-thesis" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/DocumentSetProcessor.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="GenerateHTML" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="master-thesis" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="C:\Users\Jan Buchkremer\PycharmProjects\master-thesis\GenerateHTML.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="app" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="master-thesis" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/app.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="migrate_legacy_docsets" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="master-thesis" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/migrate_legacy_docsets.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.app" />
+        <item itemvalue="Python.DataHandler" />
+        <item itemvalue="Python.GenerateHTML" />
+        <item itemvalue="Python.migrate_legacy_docsets" />
+        <item itemvalue="Python.DocumentSetProcessor" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-PY-252.27397.106" />
+        <option value="bundled-python-sdk-4e2b1448bda8-9a97661f3031-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.27397.106" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="41297862-57ae-47d2-8731-c1c0aceb995e" name="Changes" comment="" />
+      <created>1760450665210</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1760450665210</updated>
+      <workItem from="1760450666359" duration="2611000" />
+      <workItem from="1760518278794" duration="7200000" />
+      <workItem from="1760690518565" duration="6551000" />
+      <workItem from="1760955247888" duration="1276000" />
+      <workItem from="1761053244367" duration="8628000" />
+      <workItem from="1761123211720" duration="3062000" />
+      <workItem from="1761301027328" duration="9226000" />
+      <workItem from="1761552814870" duration="1668000" />
+      <workItem from="1761664187904" duration="6248000" />
+      <workItem from="1762023951367" duration="77365000" />
+      <workItem from="1762617578944" duration="15517000" />
+      <workItem from="1762932538492" duration="435000" />
+      <workItem from="1763044198709" duration="10749000" />
+      <workItem from="1763111767656" duration="963000" />
+      <workItem from="1763115844417" duration="400000" />
+      <workItem from="1763116288811" duration="11140000" />
+      <workItem from="1763291659236" duration="8631000" />
+      <workItem from="1763368099158" duration="3733000" />
+      <workItem from="1763371862318" duration="16183000" />
+      <workItem from="1763452400356" duration="19254000" />
+      <workItem from="1763540762390" duration="8789000" />
+      <workItem from="1763648924036" duration="2656000" />
+      <workItem from="1763651798402" duration="13000000" />
+      <workItem from="1763722852994" duration="15257000" />
+      <workItem from="1763820354738" duration="19623000" />
+      <workItem from="1763890000758" duration="9833000" />
+      <workItem from="1764584143701" duration="752000" />
+      <workItem from="1764671481443" duration="214000" />
+      <workItem from="1765365820794" duration="9328000" />
+      <workItem from="1765448342372" duration="17186000" />
+      <workItem from="1765537830083" duration="8197000" />
+      <workItem from="1765819460413" duration="15672000" />
+      <workItem from="1765909503082" duration="8452000" />
+      <workItem from="1765961356288" duration="15748000" />
+      <workItem from="1765990386871" duration="5510000" />
+      <workItem from="1766064896866" duration="5810000" />
+      <workItem from="1767347925693" duration="19322000" />
+      <workItem from="1767624986965" duration="10652000" />
+      <workItem from="1768402761887" duration="13160000" />
+      <workItem from="1768474691027" duration="10701000" />
+      <workItem from="1768553362048" duration="10550000" />
+      <workItem from="1768899219339" duration="14992000" />
+      <workItem from="1768991026375" duration="16000" />
+      <workItem from="1769077383188" duration="539000" />
+      <workItem from="1769077975362" duration="4854000" />
+      <workItem from="1769346891144" duration="679000" />
+      <workItem from="1769594307469" duration="26000" />
+      <workItem from="1769704909224" duration="24000" />
+      <workItem from="1780997264927" duration="4249000" />
+      <workItem from="1781081396752" duration="4580000" />
+      <workItem from="1782137344101" duration="108000" />
+      <workItem from="1782146171684" duration="394000" />
+    </task>
+    <task id="LOCAL-00001" summary="Attempts to visualise Citation Network">
+      <option name="closed" value="true" />
+      <created>1760532992335</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1760532992335</updated>
+    </task>
+    <task id="LOCAL-00002" summary="trash">
+      <option name="closed" value="true" />
+      <created>1760535482548</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1760535482548</updated>
+    </task>
+    <task id="LOCAL-00003" summary="good">
+      <option name="closed" value="true" />
+      <created>1760955281359</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1760955281359</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Pipeline compilation, added ReadMe.">
+      <option name="closed" value="true" />
+      <created>1761313628338</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1761313628338</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Updated ReadMe">
+      <option name="closed" value="true" />
+      <created>1761315669726</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1761315669726</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Added Topic Modeling (WIP)">
+      <option name="closed" value="true" />
+      <created>1762165929989</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1762165929989</updated>
+    </task>
+    <task id="LOCAL-00007" summary="bool exclusion of name generation">
+      <option name="closed" value="true" />
+      <created>1762167838983</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1762167838983</updated>
+    </task>
+    <task id="LOCAL-00008" summary="advances in topic modeling">
+      <option name="closed" value="true" />
+      <created>1762251307740</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1762251307741</updated>
+    </task>
+    <task id="LOCAL-00009" summary="advances in topic modeling">
+      <option name="closed" value="true" />
+      <created>1762523995660</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1762523995660</updated>
+    </task>
+    <task id="LOCAL-00010" summary="merge">
+      <option name="closed" value="true" />
+      <created>1762760809528</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1762760809528</updated>
+    </task>
+    <task id="LOCAL-00011" summary="improved save logic">
+      <option name="closed" value="true" />
+      <created>1762765856867</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1762765856867</updated>
+    </task>
+    <task id="LOCAL-00012" summary="citation network integration">
+      <option name="closed" value="true" />
+      <created>1762773775057</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1762773775057</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Major restructuring and advances!">
+      <option name="closed" value="true" />
+      <created>1763375160820</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1763375160820</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Advances in Citation Network.">
+      <option name="closed" value="true" />
+      <created>1763382370329</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1763382370329</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Advances in Citation Network.">
+      <option name="closed" value="true" />
+      <created>1763466356160</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1763466356160</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Advances in Citation Network.">
+      <option name="closed" value="true" />
+      <created>1763486426195</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1763486426195</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Advances in Citation Network.">
+      <option name="closed" value="true" />
+      <created>1763542618531</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1763542618531</updated>
+    </task>
+    <task id="LOCAL-00018" summary="added server">
+      <option name="closed" value="true" />
+      <created>1763546119420</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1763546119420</updated>
+    </task>
+    <task id="LOCAL-00019" summary="structural changes">
+      <option name="closed" value="true" />
+      <created>1763650384482</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1763650384482</updated>
+    </task>
+    <task id="LOCAL-00020" summary="fixes">
+      <option name="closed" value="true" />
+      <created>1763653717686</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1763653717686</updated>
+    </task>
+    <task id="LOCAL-00021" summary="variable port">
+      <option name="closed" value="true" />
+      <created>1763654027918</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1763654027918</updated>
+    </task>
+    <task id="LOCAL-00022" summary="fixed query">
+      <option name="closed" value="true" />
+      <created>1763654829588</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1763654829588</updated>
+    </task>
+    <task id="LOCAL-00023" summary="fixed saving logic">
+      <option name="closed" value="true" />
+      <created>1763657496728</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1763657496728</updated>
+    </task>
+    <task id="LOCAL-00024" summary="fixed saving logic further">
+      <option name="closed" value="true" />
+      <created>1763659405648</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1763659405649</updated>
+    </task>
+    <task id="LOCAL-00025" summary="many small upgrades">
+      <option name="closed" value="true" />
+      <created>1763911496629</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1763911496629</updated>
+    </task>
+    <task id="LOCAL-00026" summary="new viewmode + efficiency upgrades">
+      <option name="closed" value="true" />
+      <created>1765466693522</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1765466693522</updated>
+    </task>
+    <task id="LOCAL-00027" summary="improved new viewmode">
+      <option name="closed" value="true" />
+      <created>1765787233241</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1765787233241</updated>
+    </task>
+    <task id="LOCAL-00028" summary="small fix">
+      <option name="closed" value="true" />
+      <created>1765788029484</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1765788029484</updated>
+    </task>
+    <task id="LOCAL-00029" summary="reworking efficiency">
+      <option name="closed" value="true" />
+      <created>1765962306373</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1765962306373</updated>
+    </task>
+    <task id="LOCAL-00030" summary="reworking efficiency">
+      <option name="closed" value="true" />
+      <created>1765975760113</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1765975760113</updated>
+    </task>
+    <task id="LOCAL-00031" summary="good progress">
+      <option name="closed" value="true" />
+      <created>1767390007380</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1767390007380</updated>
+    </task>
+    <task id="LOCAL-00032" summary="good progress">
+      <option name="closed" value="true" />
+      <created>1767694407393</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1767694407393</updated>
+    </task>
+    <task id="LOCAL-00033" summary="bug fixes">
+      <option name="closed" value="true" />
+      <created>1767700664707</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1767700664707</updated>
+    </task>
+    <task id="LOCAL-00034" summary="better docset select">
+      <option name="closed" value="true" />
+      <created>1768411961911</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1768411961911</updated>
+    </task>
+    <task id="LOCAL-00035" summary="async">
+      <option name="closed" value="true" />
+      <created>1768417929049</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1768417929049</updated>
+    </task>
+    <task id="LOCAL-00036" summary="async be lit">
+      <option name="closed" value="true" />
+      <created>1768426330111</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1768426330111</updated>
+    </task>
+    <task id="LOCAL-00037" summary="puuush">
+      <option name="closed" value="true" />
+      <created>1768485323335</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1768485323335</updated>
+    </task>
+    <task id="LOCAL-00038" summary="puuush">
+      <option name="closed" value="true" />
+      <created>1768487069524</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1768487069524</updated>
+    </task>
+    <task id="LOCAL-00039" summary="puuush">
+      <option name="closed" value="true" />
+      <created>1768563135867</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1768563135867</updated>
+    </task>
+    <task id="LOCAL-00040" summary="puuush">
+      <option name="closed" value="true" />
+      <created>1768563401637</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1768563401637</updated>
+    </task>
+    <task id="LOCAL-00041" summary="debug">
+      <option name="closed" value="true" />
+      <created>1768572096485</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1768572096485</updated>
+    </task>
+    <task id="LOCAL-00042" summary="fuck that name shit">
+      <option name="closed" value="true" />
+      <created>1768572723920</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1768572723921</updated>
+    </task>
+    <task id="LOCAL-00043" summary="last push?">
+      <option name="closed" value="true" />
+      <created>1768904906073</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1768904906073</updated>
+    </task>
+    <task id="LOCAL-00044" summary="another push">
+      <option name="closed" value="true" />
+      <created>1768907534231</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1768907534231</updated>
+    </task>
+    <task id="LOCAL-00045" summary="small fix">
+      <option name="closed" value="true" />
+      <created>1768909408884</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1768909408884</updated>
+    </task>
+    <task id="LOCAL-00046" summary="removed legacy naming of docsets">
+      <option name="closed" value="true" />
+      <created>1768917566452</created>
+      <option name="number" value="00046" />
+      <option name="presentableId" value="LOCAL-00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1768917566452</updated>
+    </task>
+    <option name="localTasksCounter" value="47" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName=".env" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Major restructuring and advances!" />
+    <MESSAGE value="Advances in Citation Network." />
+    <MESSAGE value="added server" />
+    <MESSAGE value="structural changes" />
+    <MESSAGE value="fixes" />
+    <MESSAGE value="variable port" />
+    <MESSAGE value="fixed query" />
+    <MESSAGE value="fixed saving logic" />
+    <MESSAGE value="fixed saving logic further" />
+    <MESSAGE value="many small upgrades" />
+    <MESSAGE value="new viewmode + efficiency upgrades" />
+    <MESSAGE value="improved new viewmode" />
+    <MESSAGE value="reworking efficiency" />
+    <MESSAGE value="good progress" />
+    <MESSAGE value="bug fixes" />
+    <MESSAGE value="better docset select" />
+    <MESSAGE value="async" />
+    <MESSAGE value="async be lit" />
+    <MESSAGE value="puuush" />
+    <MESSAGE value="debug" />
+    <MESSAGE value="fuck that name shit" />
+    <MESSAGE value="last push?" />
+    <MESSAGE value="another push" />
+    <MESSAGE value="small fix" />
+    <MESSAGE value="removed legacy naming of docsets" />
+    <option name="LAST_COMMIT_MESSAGE" value="removed legacy naming of docsets" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/master_thesis$migrate_legacy_docsets.coverage" NAME="migrate_legacy_docsets Coverage Results" MODIFIED="1768415850048" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$test.coverage" NAME="test Coverage Results" MODIFIED="1762441228791" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$generate_standalone.coverage" NAME="generate_standalone Coverage Results" MODIFIED="1768911110516" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$DocsetData.coverage" NAME="DocsetData Coverage Results" MODIFIED="1760703875089" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$TopicModelingKATI.coverage" NAME="TopicModelingKATI Coverage Results" MODIFIED="1762080725653" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$TopicModeling.coverage" NAME="TopicModeling Coverage Results" MODIFIED="1761909475893" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$EmbeddingData.coverage" NAME="EmbeddingData Coverage Results" MODIFIED="1761053916706" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$TopicLandscapeVis.coverage" NAME="TopicLandscapeVis Coverage Results" MODIFIED="1761069848477" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$DocumentSetProcessor.coverage" NAME="DocumentSetProcessor Coverage Results" MODIFIED="1763910941501" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$LocalLabelingModel.coverage" NAME="LocalLabelingModel Coverage Results" MODIFIED="1762025505189" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$CitationNetworkVis.coverage" NAME="CitationNetworkVis Coverage Results" MODIFIED="1761055673156" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$SaveModel.coverage" NAME="SaveModel Coverage Results" MODIFIED="1762251117981" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$OpenRouterTest.coverage" NAME="OpenRouterTest Coverage Results" MODIFIED="1762269369667" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$DataHandler.coverage" NAME="DataHandler Coverage Results" MODIFIED="1769080120327" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$TopicModelingClusters__1_.coverage" NAME="TopicModelingClusters (1) Coverage Results" MODIFIED="1762418319453" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/master_thesis$app.coverage" NAME="app Coverage Results" MODIFIED="1769346892607" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+  </component>
+</project>

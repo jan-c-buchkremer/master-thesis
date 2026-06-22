@@ -1,0 +1,670 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    margin: 0;
+    background-color: #f8f9fa;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden; /* Prevent scrolling on the main page */
+    height: 100vh; /* Full viewport height */
+    width: 100vw;
+}
+
+.header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+    padding: 10px 20px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+#current-docset-label {
+    font-weight: bold;
+    font-size: 24px;
+}
+
+.control-wrapper-horizontal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+h1 {
+    font-weight: 300;
+    margin: 20px 0 10px 0;
+}
+.main-container {
+    display: flex;
+    width: 100%;
+    max-width: none;
+    flex: 1; /* Grow to fill remaining height */
+    margin-top: 0;
+    border-top: 1px solid #ddd;
+    background-color: #fff;
+    position: relative; /* Establish positioning context for absolute children */
+    min-height: 0; /* Allow shrinking */
+}
+.filter-sidebar {
+    width: 250px;
+    min-width: 200px;
+    padding: 15px;
+    background-color: #f0f2f5;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+    height: 100%; /* Fill container height */
+    max-height: none;
+    box-sizing: border-box;
+}
+.sidebar-header {
+    display: flex;
+    flex-direction: column; /* Stack vertically to fit the dropdown better */
+    justify-content: space-between;
+    align-items: flex-start; /* Align left */
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ddd;
+    gap: 10px;
+}
+.sidebar-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+.small-btn, .control-element {
+    padding: 4px 8px;
+    font-size: 11px;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #495057;
+    font-family: inherit;
+}
+.small-btn:hover, .control-element:hover {
+    background-color: #dde2e6;
+    color: #212529;
+}
+
+select.control-element {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23495057%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right .5em top 50%;
+    background-size: .5em auto;
+    padding-right: 1.8em;
+}
+
+.filter-group {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+}
+.filter-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #111;
+    padding: 5px 0;
+}
+
+.title-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reload-icon {
+    font-size: 16px;
+    color: #666;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s, transform 0.2s;
+    line-height: 1;
+}
+
+.reload-icon:hover {
+    color: #000;
+    transform: rotate(30deg);
+}
+
+.toggle-arrow {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #333;
+    transition: transform 0.3s ease;
+}
+
+/* Make the arrow smaller inside filter items to match the smaller text */
+.filter-item .toggle-arrow {
+    border-left-width: 4px;
+    border-right-width: 4px;
+    border-top-width: 4px;
+    opacity: 0.7; /* Slightly fade it so it's not too heavy */
+}
+
+.filter-group.collapsed .toggle-arrow,
+.cluster-node.collapsed .toggle-arrow {
+    transform: rotate(-90deg);
+}
+
+.filter-content {
+    max-height: none; /* Let content flow */
+    overflow-y: visible; /* Sidebar handles scroll */
+    transition: max-height 0.3s ease-in-out;
+}
+
+.filter-group.collapsed .filter-content {
+    max-height: 0;
+    overflow: hidden;
+}
+
+/* This is the placeholder for non-cluster filters to align them */
+.filter-item-placeholder {
+    width: 12px; /* This matches the width of the .toggle span */
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+/* This is the single, consolidated rule for all filter items */
+.filter-item {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    margin-bottom: 4px;
+    cursor: pointer; /* Make the whole row feel interactive */
+}
+.filter-item input {
+    margin-right: 5px;
+    flex-shrink: 0; /* Prevents checkbox from shrinking */
+}
+.filter-item label {
+    flex-grow: 1; /* Makes the label fill all available space */
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Add padding to non-hierarchical lists to align their checkboxes.
+ * This 12px padding matches the width of the .toggle span,
+ * pushing the content right for perfect alignment.
+*/
+#auto-keyword-list .filter-item,
+#author-list .filter-item,
+#organization-list .filter-item,
+#journal-list .filter-item,
+#search-filter-list .filter-item {
+    padding-left: 12px;
+}
+
+/* Cluster-specific styles */
+.cluster-node {
+}
+.cluster-children {
+    margin-left: 20px;
+}
+.toggle {
+    cursor: pointer;
+    font-weight: bold;
+    font-family: monospace;
+    width: 12px;
+    display: inline-block;
+    text-align: center;
+    flex-shrink: 0;
+    user-select: none;
+}
+.cluster-node.collapsed .cluster-children {
+    display: none;
+}
+
+.cluster-color-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+
+/* Visualization area styles */
+#visualization-area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+.controls {
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap; /* Allows wrapping */
+    align-items: center;
+    font-size: 12px;
+    gap: 15px; /* Add space between control groups */
+    width: 100%;
+    box-sizing: border-box;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0; /* Prevent controls from shrinking */
+}
+
+#visualization {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#citation-controls-container, #link-mode-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.tooltip {
+    position: absolute;
+    text-align: left;
+    padding: 8px;
+    font: 12px sans-serif;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    max-width: 350px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Graph element styles */
+.highlighted-link {
+    stroke: #444444 !important;
+    stroke-opacity: 1 !important;
+    z-index: 10;
+}
+.selected-paper {
+    stroke: #444444 !important;
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0));
+}
+
+/* Search filter remove button styles */
+.remove-search-filter {
+    cursor: pointer;
+    padding: 0 0.4em;
+    font-weight: bold;
+    color: #888;
+    flex-shrink: 0; /* Prevents the 'x' from shrinking */
+}
+
+.remove-search-filter:hover {
+    color: #000;
+}
+
+/*
+ * Creates the inline layout for the search input and button.
+*/
+#search-container {
+    display: flex;
+    margin-bottom: 8px; /* Space before the filter list */
+}
+
+/* Style the text input */
+#search-container input[type="text"] {
+    flex-grow: 1; /* Input takes all available space */
+    min-width: 0;   /* Prevents overflow in flex */
+    border: 1px solid #ccc;
+    padding: 5px 8px;
+    font-size: 12px;
+
+    /* Connects it to the button */
+    border-right: none;
+    border-radius: 3px 0 0 3px;
+}
+
+/* Style the button */
+#search-container button {
+    flex-shrink: 0; /* Button does not shrink */
+    padding: 5px 10px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    background-color: #eee;
+    cursor: pointer;
+
+    /* Connects it to the input */
+    border-radius: 0 3px 3px 0;
+}
+
+#search-container button:hover {
+    background-color: #ddd;
+}
+
+/* Clean focus state */
+#search-container input[type="text"]:focus {
+    outline: none;
+    border-color: #888;
+    box-shadow: 0 0 0 1px #888;
+    z-index: 2;
+}
+
+/* --- Docset Selector Styles --- */
+
+.docset-selector-container {
+    /* Center the container and add space above/below it */
+    text-align: center;
+    margin: 15px 0;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.docset-selector-container label {
+    font-weight: bold;
+    margin-right: 10px;
+    font-size: 1.1em;
+}
+
+#docset-selector, #view-mode-selector {
+    /* Basic styling for the dropdown */
+    font-size: 1em;
+    padding: 5px 2.2em 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit; /* Use the same font as the page */
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+#docset-selector:disabled, #view-mode-selector:disabled {
+    /* Style for when the selector is disabled during loading */
+    background-color: #f4f4f4;
+    cursor: not-allowed;
+    color: #888;
+}
+
+/* --- SVG Error Message Style --- */
+
+.error-message {
+    font-size: 18px;
+    font-weight: bold;
+    fill: #b90000; /* A dark red color for the error text */
+}
+
+/* --- Hierarchical Cluster Filter Toggling --- */
+
+/* Hide children when the node is collapsed */
+.cluster-node.collapsed > .cluster-children {
+    display: none;
+}
+
+/* Style for the expand/collapse toggle */
+.filter-item .toggle {
+    display: inline-block;
+    width: 1.5em; /* Give it a fixed width for alignment */
+    cursor: pointer;
+    font-weight: bold;
+    user-select: none; /* Prevent text selection on click */
+}
+
+/* --- Unified Slider Styles --- */
+.control-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#knn-controls-container {
+    max-width: 220px;
+}
+
+.control-wrapper.vertical {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.control-wrapper.vertical label {
+    text-align: center;
+}
+
+.control-wrapper.vertical .value-label {
+    text-align: center;
+    min-width: 0;
+}
+
+.control-wrapper label {
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.control-wrapper .value-label,
+.control-wrapper .value-label-double {
+    font-size: 12px;
+    font-weight: bold;
+    min-width: 60px; /* Give space for year range */
+    text-align: center;
+}
+
+/* Single-thumb slider specific styling */
+#knn-slider, #distance-slider, #relevance-weights-filter input[type="range"], #min-citation-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    outline: none;
+    padding: 0;
+    margin: 0;
+}
+
+#knn-slider::-webkit-slider-thumb, #distance-slider::-webkit-slider-thumb, #relevance-weights-filter input[type="range"]::-webkit-slider-thumb, #min-citation-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #007bff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+#knn-slider::-moz-range-thumb, #distance-slider::-moz-range-thumb, #relevance-weights-filter input[type="range"]::-moz-range-thumb, #min-citation-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #007bff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+/* Dual-thumb (range) slider specific styling */
+.range-slider {
+    position: relative;
+    width: 100%; /* Changed from 150px to 100% to fit sidebar */
+    height: 20px; /* Height for interaction */
+}
+
+.range-slider .slider-track,
+.range-slider .slider-range-fill {
+    position: absolute;
+    height: 4px;
+    border-radius: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+}
+
+.range-slider .slider-track {
+    background-color: #ddd;
+}
+
+.range-slider .slider-range-fill {
+    background-color: #007bff;
+    z-index: 1;
+}
+
+.range-slider input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 0; /* Collapse height to prevent blocking */
+    top: 50%; /* Center vertically */
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    pointer-events: auto; /* Enable interaction */
+    margin: 0;
+    padding: 0;
+    z-index: 2;
+}
+
+.range-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #007bff;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto;
+    margin-top: -8px; /* Center thumb on the track (half of 16px) */
+}
+
+.range-slider input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #007bff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    pointer-events: auto;
+    transform: translateY(0); /* Moz handles centering differently */
+}
+
+/* Hide the max-slider's track so only the min-slider's track is visible */
+.range-slider .max-slider::-webkit-slider-runnable-track {
+    background: transparent;
+}
+.range-slider .max-slider::-moz-range-track {
+    background: transparent;
+}
+
+/* --- Info Card Styles --- */
+.info-card {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 300px;
+    min-width: 250px;
+    padding: 15px;
+    background-color: #f0f2f5;
+    border-left: 1px solid #ddd;
+    overflow-y: auto;
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    z-index: 10;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    max-height: none;
+}
+
+.info-card.active {
+    display: flex;
+}
+
+.info-card h2 {
+    margin-top: 0;
+    font-size: 18px;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+    padding-right: 30px;
+}
+
+.info-card h3 {
+    font-size: 14px;
+    margin: 10px 0 5px 0;
+    color: #555;
+}
+
+.info-card p {
+    font-size: 13px;
+    margin: 0 0 10px 0;
+    line-height: 1.4;
+}
+
+.info-card .meta-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.info-card .meta-list li {
+    font-size: 12px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.info-card .meta-list li input {
+    margin-right: 5px;
+}
+
+.info-card .action-btn {
+    margin-top: 20px;
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    align-self: center;
+}
+
+.info-card .action-btn:hover {
+    background-color: #0056b3;
+}
+
+.info-card .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    cursor: pointer;
+    font-size: 24px;
+    color: #888;
+    z-index: 20;
+}
+
+.info-card .close-btn:hover {
+    color: #333;
+}

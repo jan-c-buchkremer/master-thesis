@@ -1,0 +1,123 @@
+swagger: "2.0"
+info:
+  title: "Docset Visualization API (Async)"
+  description: "Asynchronous API to generate and retrieve citation graph visualizations."
+  version: "1.1"
+
+basePath: "/"
+
+
+paths:
+  /start:
+    get:
+      summary: "Start the visualization process"
+      description: "Initiates the graph analysis for a given docset IRI and returns a task UUID."
+      parameters:
+        - name: "docset_iri"
+          in: "query"
+          required: true
+          type: "string"
+          description: "The IRI of the document set to visualize"
+      responses:
+        202:
+          description: "Process started"
+          schema:
+            $ref: "#/definitions/TaskStarted"
+        400:
+          description: "Missing required parameters"
+
+  /status:
+    get:
+      summary: "Get process status"
+      description: "Returns the current state of the process associated with the given UUID."
+      parameters:
+        - name: "uuid"
+          in: "query"
+          required: true
+          type: "string"
+          description: "The unique task identifier"
+      responses:
+        200:
+          description: "Current status of the task"
+          schema:
+            $ref: "#/definitions/TaskStatus"
+        404:
+          description: "UUID not found"
+
+  /result:
+    get:
+      summary: "Get process result"
+      description: "Returns the final visualization URL or error details if the process is finished/failed."
+      parameters:
+        - name: "uuid"
+          in: "query"
+          required: true
+          type: "string"
+          description: "The unique task identifier"
+      responses:
+        200:
+          description: "Visualization result"
+          schema:
+            $ref: "#/definitions/TaskResult"
+        202:
+          description: "Process still in progress"
+        500:
+          description: "Process failed"
+          schema:
+            $ref: "#/definitions/TaskError"
+        404:
+          description: "UUID not found"
+
+  /visualisations/index.html:
+    get:
+      summary: "Access Visualization"
+      description: "Directly access the visualization for a specific docset hash."
+      parameters:
+        - name: "docset"
+          in: "query"
+          required: true
+          type: "string"
+          description: "The hash (or folder name) of the processed document set."
+      responses:
+        200:
+          description: "HTML Visualization Page"
+          schema:
+            type: file
+
+definitions:
+  TaskStarted:
+    type: "object"
+    properties:
+      uuid:
+        type: "string"
+
+  TaskStatus:
+    type: "object"
+    properties:
+      uuid:
+        type: "string"
+      status:
+        type: "string"
+        enum: ["pending", "running", "finished", "done", "success", "completed", "error", "failed"]
+
+  TaskResult:
+    type: "object"
+    properties:
+      uuid:
+        type: "string"
+      status:
+        type: "string"
+        url:
+          type: "string"
+          description: "URL to the generated HTML visualization"
+
+  TaskError:
+    type: "object"
+    properties:
+      uuid:
+        type: "string"
+      status:
+        type: "string"
+      error:
+        type: "string"
+        description: "Error message details"

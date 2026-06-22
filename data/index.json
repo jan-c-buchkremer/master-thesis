@@ -1,0 +1,147 @@
+[
+  {
+    "hash": "d2bf03c37f09dd461d609baf26c9f9c8",
+    "name": "Aortic Valve Stenosis and Mice Gut Microbiome",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/d3818111-7739-41fc-84d4-4092e2cd96f6"
+  },
+  {
+    "hash": "f17f8d23cf43df31ba55b0670970911e",
+    "name": "Clinical Setting Anorexia Psychological",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/56fd9573-169f-424a-a7a3-09b5d88aefdc"
+  },
+  {
+    "hash": "2641a8f2132221997b0251ce9de17ffb",
+    "name": "Correctness by Construction",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/f5f26485-83dc-4182-a28c-ec3252e26064"
+  },
+  {
+    "hash": "2d96bc595a7dfabfdb0b157a6bb7a332",
+    "name": "Epistemic Feminism",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/dfffef65-103d-4b0f-9539-2a1df41d2bcc"
+  },
+  {
+    "hash": "58edba23359b5e7b471e2b01d04945f0",
+    "name": "Football Prediction Models",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/e8730598-9320-4e43-8a1b-b7b560490b88"
+  },
+  {
+    "hash": "00df6e5ca2295c704d5bb73c35f233b3",
+    "name": "Football Youth Community Developement",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/a1553294-9d23-4db4-898f-f66a7525bd78"
+  },
+  {
+    "hash": "cb24ae804539cfe45f9114d01bd12d80",
+    "name": "Music Psychology and Monetization",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/f6318dab-5109-4d18-9a7c-37600b9301e3"
+  },
+  {
+    "hash": "7af274b916654762fa3ff874e3d7dee1",
+    "name": "Security Operation Centers",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/7fcf421c-e88f-4fbc-8756-8469c6c510e4"
+  },
+  {
+    "hash": "50defcb8dcf3eee81cb45187c104ab9d",
+    "name": "Security Operation Centers V2",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/2a868ec9-6ff2-4a6b-9f9f-ed86125f487e"
+  },
+  {
+    "hash": "3bf15c153239ab3212d9810f585e6ad9",
+    "name": "Signaling Theory in Management",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/d3c85b3e-aa2b-48dc-841b-d4798cd290e4"
+  },
+  {
+    "hash": "3535e6cbf067951ee645ad420874fb33",
+    "name": "Software Architecture",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/bdc501a0-65e9-4ea2-9e94-5a6bd5a0962b"
+  },
+  {
+    "hash": "1062b7b023a0a389dfe1728927d4d9c7",
+    "name": "Generative Models and Knowledge Retrieval",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/8f790bc8-4197-4b8c-ad27-00bd741f9f69"
+  },
+  {
+    "hash": "1abe5bb4b1ec7dc1c4cd6ba0e03a5403",
+    "name": "test123",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/13ebb3ba-abab-4826-b229-fc645dcf9106"
+  },
+  {
+    "hash": "225764f1d8980ff8898454cef831c10f",
+    "name": "Scalable Manufacturing Automation",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/9d744c82-3908-41a8-aea0-80ca47e22c4d"
+  },
+  {
+    "hash": "32c6487beb16dad17190a430a87017b0",
+    "name": "Deep Learning for Manufacturing",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/d705c3d8-61b2-4500-8520-ef856aafbb30"
+  },
+  {
+    "hash": "3a21ff631c8db83ea8a84e2811bd2c70",
+    "name": "nhofer.de/ui?resource=http://int.fraunhofer.de/linkeddata/resources/sets/152dacc1-3091-4a0e-9142-b3e2b4f9a608",
+    "iri": "nhofer.de/ui?resource=http://int.fraunhofer.de/linkeddata/resources/sets/152dacc1-3091-4a0e-9142-b3e2b4f9a608"
+  },
+  {
+    "hash": "3a7e76d203a82e2953dfbe28ac02c751",
+    "name": "Master Thesis",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/e134b7ea-ccd3-4090-b9ba-e2f73ba4fd26"
+  },
+  {
+    "hash": "3d0fe805269e2299488e000b6e5bab87",
+    "name": "Citation Network Analysis and Evolution",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/fb8fff2e-d6df-4497-a4e9-b8f09573f3e4"
+  },
+  {
+    "hash": "5eb6e7617f5530f5ab07b8b7b8759737",
+    "name": "Pricing Algorithms",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/694ef2a6-c5a0-495b-88db-d60b63439491"
+  },
+  {
+    "hash": "9b735f2b3a124c66cded19381f66905f",
+    "name": "Causal Analysis and Decision Support",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/412a5e9b-bcf5-43e4-b3fa-72d0f9123c85"
+  },
+  {
+    "hash": "9dcf16f84070279014c169c924331d3f",
+    "name": "LLM Reasoning",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/71c53d46-a18f-49e5-93d6-60d57f13ffce"
+  },
+  {
+    "hash": "9ec12f6cd1bb08de321bd33af8f46ec5",
+    "name": "Privacy Mathematics and Governance",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/84572388-10c8-4763-b75e-ee48d3c4c36f"
+  },
+  {
+    "hash": "ba85fbea3707f9b0b21833684d811ef3",
+    "name": "Probabilistic Reasoning and Safety",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/e632505f-0fa8-43b3-8a64-f8f05c557db5"
+  },
+  {
+    "hash": "cbe2dd847dfab256f7556f5e188fcbeb",
+    "name": "Propaganda and Control",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/1b45938e-3db8-4d1f-b836-b7cdd7a97ce4"
+  },
+  {
+    "hash": "eaccfa218da467b7fd607a832b3865b1",
+    "name": "Epistemic Feminism",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/88e8ccbf-af21-4cbf-9ab1-2b3be3aeb23e"
+  },
+  {
+    "hash": "edd6f73c1242dd19fdb67f717af103e7",
+    "name": "Algebraic Quantum Algorithms",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/fcfa7ea6-6949-45ee-aed3-d7da665919cd"
+  },
+  {
+    "hash": "ee6a32aae34a34c6c1f2a93aaf5c1073",
+    "name": "Generalised GNN Planning and Acting",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/3be4d979-652e-4aea-b762-85edc09d0134"
+  },
+  {
+    "hash": "f36c348067860a979aae51f0a6c098f6",
+    "name": "Hannah Arendt",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/d92c71bd-0781-432e-b8b0-300a0ae4e987"
+  },
+  {
+    "hash": "f6ebb8fca97f602024a9772e4ae462b7",
+    "name": "Geospatial Visualisation",
+    "iri": "http://int.fraunhofer.de/linkeddata/resources/sets/152dacc1-3091-4a0e-9142-b3e2b4f9a608"
+  }
+]

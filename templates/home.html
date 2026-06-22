@@ -1,0 +1,300 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Paper Pipeline</title>
+    <!-- Link to the existing stylesheet from the visualisation -->
+    <link rel="stylesheet" href="/visualisations/style.css">
+    <style>
+        /* Add specific styles for the home page layout */
+        body {
+            justify-content: center; /* Center content vertically */
+            align-items: center; /* Center content horizontally */
+            min-height: 100vh;
+        }
+        .home-container {
+            display: flex;
+            flex-direction: column;
+            width: 90%;
+            max-width: 800px; /* Limit max width for readability */
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            border-radius: 8px; /* Add some rounded corners */
+        }
+        .home-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .home-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        h2 {
+            font-size: 1.5em;
+            font-weight: 400;
+            color: #111;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        /* Use the existing search container styles for the form */
+        #process-form .form-group, #exploration-form .form-group {
+            margin-bottom: 15px;
+        }
+        #process-form label, #exploration-form label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        #process-form input[type="url"],
+        #process-form input[type="text"],
+        #exploration-form select {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+        #process-form button, #exploration-form button {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            background-color: #eee;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+        #process-form button:hover, #exploration-form button:hover {
+            background-color: #ddd;
+        }
+        
+        /* Status Box Styles */
+        #status-box {
+            margin-top: 15px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            display: none;
+        }
+        #status-box.running { border-color: #007bff; background-color: #e7f1ff; }
+        #status-box.success { border-color: #28a745; background-color: #d4edda; }
+        #status-box.error { border-color: #dc3545; background-color: #f8d7da; }
+        
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: #007bff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 5px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- Use a container similar to the visualisation's main container -->
+    <div class="home-container">
+        <h1>Finding the Needle in a Haystack</h1>
+
+        <div class="home-section">
+            <h2>Docset Exploration</h2>
+            <p>Select a processed document set to explore its Topic Landscape and Citation Network.</p>
+            
+            <form id="exploration-form">
+                <div class="form-group">
+                    <label for="docset-select">Select Document Set:</label>
+                    <select id="docset-select" required>
+                        <option value="">Loading docsets...</option>
+                    </select>
+                </div>
+                <button type="submit">Open Visualisation</button>
+            </form>
+        </div>
+
+        <div class="home-section">
+            <h2>New Docset</h2>
+            <p>
+                Add a new set of papers for analysis by providing the docset IRI.
+                I recommend a docset of 1000 - 5000 publications.
+                The processing will start automatically and might take up to half an hour.
+            </p>
+            <form id="process-form">
+                <div class="form-group">
+                    <label for="docset_iri">Docset IRI</label>
+                    <input type="url" id="docset_iri" name="docset_iri" required placeholder="http://example.com/docset-iri">
+                </div>
+                <button type="submit" id="start-btn">Start Processing</button>
+            </form>
+            
+            <div id="status-box">
+                <h3 style="margin-top: 0;">Processing Status</h3>
+                <div id="status-content"></div>
+            </div>
+        </div>
+        
+        <div class="home-section">
+            <p style="font-size: 0.9em; color: #666;">
+                <a href="/swagger/" target="_blank">API Documentation (Swagger UI)</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const select = document.getElementById('docset-select');
+            
+            // --- 1. Load Docsets for Exploration ---
+            fetch('/data/index.json')
+                .then(response => response.json())
+                .then(docsets => {
+                    select.innerHTML = '<option value="">-- Select a Docset --</option>';
+                    if (docsets && docsets.length > 0) {
+                        // Handle both old format (strings) and new format (objects)
+                        docsets.forEach(docset => {
+                            const option = document.createElement('option');
+                            if (typeof docset === 'string') {
+                                option.value = docset;
+                                option.textContent = docset;
+                            } else {
+                                option.value = docset.hash;
+                                option.textContent = docset.name;
+                            }
+                            select.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.textContent = "No docsets available";
+                        select.appendChild(option);
+                        select.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading docsets:', error);
+                    select.innerHTML = '<option value="">Error loading docsets</option>';
+                    select.disabled = true;
+                });
+
+            // Handle exploration form submission
+            document.getElementById('exploration-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const selectedHash = select.value;
+                if (selectedHash) {
+                    // Open in new tab
+                    window.open(`/visualisations/index.html?docset=${encodeURIComponent(selectedHash)}`, '_blank');
+                } else {
+                    alert('Please select a document set.');
+                }
+            });
+
+            // --- 2. Handle New Docset Processing ---
+            const processForm = document.getElementById('process-form');
+            const statusBox = document.getElementById('status-box');
+            const statusContent = document.getElementById('status-content');
+            const startBtn = document.getElementById('start-btn');
+            let pollInterval = null;
+
+            processForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const iri = document.getElementById('docset_iri').value;
+                
+                startBtn.disabled = true;
+                startBtn.textContent = "Starting...";
+                
+                // Use GET request with query parameters
+                const params = new URLSearchParams({
+                    docset_iri: iri
+                });
+
+                fetch(`/start?${params.toString()}`, {
+                    method: 'GET'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.uuid) {
+                        startPolling(data.uuid);
+                    } else {
+                        showError(data.error || "Failed to start process.");
+                        startBtn.disabled = false;
+                        startBtn.textContent = "Start Processing";
+                    }
+                })
+                .catch(err => {
+                    showError("Network error: " + err.message);
+                    startBtn.disabled = false;
+                    startBtn.textContent = "Start Processing";
+                });
+            });
+
+            function startPolling(uuid) {
+                statusBox.style.display = 'block';
+                statusBox.className = 'running';
+                statusContent.innerHTML = `<div class="spinner"></div> Processing started. Task ID: ${uuid}<br>Please wait, this may take a while...`;
+                
+                pollInterval = setInterval(() => {
+                    fetch(`/status?uuid=${uuid}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'finished' || data.status === 'success' || data.status === 'done' || data.status === 'completed') {
+                                clearInterval(pollInterval);
+                                getResult(uuid);
+                            } else if (data.status === 'error' || data.status === 'failed') {
+                                clearInterval(pollInterval);
+                                getResult(uuid); // Result endpoint handles error details too
+                            } else {
+                                // Still running
+                                statusContent.innerHTML = `<div class="spinner"></div> Status: ${data.status}...`;
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Polling error", err);
+                        });
+                }, 2000); // Poll every 2 seconds
+            }
+
+            function getResult(uuid) {
+                fetch(`/result?uuid=${uuid}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.url) {
+                            statusBox.className = 'success';
+                            // Added target="_blank" to open in new tab
+                            statusContent.innerHTML = `<strong>Success!</strong> Processing complete.<br><br><a href="${data.url}" class="button-link" target="_blank">Open Visualisation</a>`;
+                            startBtn.disabled = false;
+                            startBtn.textContent = "Start Processing";
+                        } else {
+                            showError(data.error || "Unknown error occurred.");
+                            startBtn.disabled = false;
+                            startBtn.textContent = "Start Processing";
+                        }
+                    })
+                    .catch(err => {
+                        showError("Failed to get result: " + err.message);
+                        startBtn.disabled = false;
+                        startBtn.textContent = "Start Processing";
+                    });
+            }
+
+            function showError(msg) {
+                statusBox.style.display = 'block';
+                statusBox.className = 'error';
+                statusContent.textContent = "Error: " + msg;
+            }
+        });
+    </script>
+
+</body>
+</html>

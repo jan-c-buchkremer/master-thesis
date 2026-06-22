@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Embedding Visualization (High-D)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="header-bar">
+        <div class="header-left">
+            <span id="current-docset-label"></span>
+            <div class="control-wrapper-horizontal">
+                <label for="view-mode-selector">View Mode:</label>
+                <select id="view-mode-selector" class="control-element" title="Switch between different visualization modes">
+                    <option value="topic-landscape">Topic Landscape</option>
+                    <option value="citation-network">Citation Network</option>
+                </select>
+            </div>
+        </div>
+        <div class="header-right">
+            <button id="show-docs-btn" class="small-btn" title="Show Documentation">?</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="filter-sidebar">
+            <div class="sidebar-header">
+                <h2>Filters</h2>
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <select id="save-dropdown" class="control-element" style="max-width: 120px; font-size: 12px; padding: 3px;" title="Select what to save">
+                        <option value="filters">Save Filters</option>
+                        <option value="selection">Save Selection</option>
+                        <option value="visible">Save Visible</option>
+                    </select>
+                    <button id="perform-save-btn" class="small-btn" title="Save the selected preset">Save</button>
+                    <button id="reset-filters-btn" class="small-btn" title="Clear all active filters and selections">Reset</button>
+                </div>
+            </div>
+
+            <div class="filter-group" id="saved-filters-group" style="display: none;">
+                <strong class="filter-title" title="Toggle visibility of saved filters">
+                    <span>Saved Filters</span>
+                    <span class="toggle-arrow"></span>
+                </strong>
+                <div class="filter-content">
+                    <div id="saved-filters-list" class="filter-list"></div>
+                </div>
+            </div>
+
+            <div class="filter-group" id="search-filter">
+                <strong class="filter-title" title="Toggle visibility of search filters">
+                    <span>Search</span>
+                    <span class="toggle-arrow"></span>
+                </strong>
+                <div class="filter-content">
+                    <div id="search-container">
+                        <input type="text" id="paper-search-input" placeholder="Search title / abstract..." title="Search for text in paper titles and abstracts">
+                        <button id="add-search-filter-btn" title="Add the search term as a filter">Add</button>
+                    </div>
+                    <div id="search-filter-list" class="filter-list"></div>
+                </div>
+            </div>
+
+            <div class="filter-group" id="timeslice-filter">
+                <strong class="filter-title" title="Toggle visibility of the timespan filter">
+                    <span>Timespan</span>
+                    <span class="toggle-arrow"></span>
+                </strong>
+                <div class="filter-content">
+                    <div id="timeslice-controls-container" class="control-wrapper vertical" title="Filter papers by publication year">
+                        <div class="range-slider">
+                            <div class="slider-track"></div>
+                            <div class="slider-range-fill"></div>
+                            <input type="range" id="start-year-slider" class="min-slider" min="1900" max="2024" value="1900">
+                            <input type="range" id="end-year-slider" class="max-slider" min="1900" max="2024" value="2024">
+                        </div>
+                        <div class="value-label-double">
+                            <span id="start-year-value">1900</span>
+                            <span>&ndash;</span>
+                            <span id="end-year-value">2024</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group" id="citation-count-filter">
+                <strong class="filter-title" title="Toggle visibility of the citation count filter">
+                    <span>Min. Citations</span>
+                    <span class="toggle-arrow"></span>
+                </strong>
+                <div class="filter-content">
+                    <div class="control-wrapper">
+                        <input type="range" id="min-citation-slider" min="0" max="100" step="1" value="0" title="Set the minimum number of citations for a paper to be visible">
+                        <span id="min-citation-value" class="value-label">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group" id="relevance-weights-filter" style="display: none;">
+                <strong class="filter-title" title="Toggle visibility of relevance weights (Ego Network)">
+                    <span>Relevance Weights</span>
+                    <span class="toggle-arrow"></span>
+                </strong>
+                <div class="filter-content">
+                    <div class="control-wrapper vertical">
+                        <label for="semantic-weight-slider">Semantic</label>
+                        <input type="range" id="semantic-weight-slider" min="0" max="100" step="1" value="50" title="Adjust weight of semantic similarity for neighbor relevance">
+                        <span id="semantic-weight-value" class="value-label">0.50</span>
+                    </div>
+                    <div class="control-wrapper vertical">
+                        <label for="citation-weight-slider">Citation</label>
+                        <input type="range" id="citation-weight-slider" min="0" max="100" step="1" value="30" title="Adjust weight of citation links for neighbor relevance">
+                        <span id="citation-weight-value" class="value-label">0.30</span>
+                    </div>
+                    <div class="control-wrapper vertical">
+                        <label for="cluster-weight-slider">Cluster</label>
+                        <input type="range" id="cluster-weight-slider" min="0" max="100" step="1" value="10" title="Adjust weight of shared cluster for neighbor relevance">
+                        <span id="cluster-weight-value" class="value-label">0.10</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group" id="cluster-filter">
+                <strong class="filter-title" title="Toggle visibility of the cluster filter">
+                    <span>Filter by Cluster</span>
+                    <span class="toggle-arrow"></span>
+                </strong>
+                <div class="filter-content">
+                    <div id="cluster-list" title="Filter papers by their assigned topic cluster"></div>
+                </div>
+            </div>
+
+            <div class="filter-group collapsed" id="author-filter">
+                <strong class="filter-title" title="Toggle visibility of the author filter">
+                    <span>Filter by Author</span>
+                    <span class="title-controls">
+                        <span class="reload-icon" data-target="author" title="Reorder authors based on frequency in the current view">↻</span>
+                        <span class="toggle-arrow"></span>
+                    </span>
+                </strong>
+                <div class="filter-content">
+                    <div id="author-list" title="Filter papers by author"></div>
+                </div>
+            </div>
+
+            <div class="filter-group collapsed" id="organization-filter">
+                <strong class="filter-title" title="Toggle visibility of the organization filter">
+                    <span>Filter by Organization</span>
+                    <span class="title-controls">
+                        <span class="reload-icon" data-target="organization" title="Reorder organizations based on frequency in the current view">↻</span>
+                        <span class="toggle-arrow"></span>
+                    </span>
+                </strong>
+                <div class="filter-content">
+                    <div id="organization-list" title="Filter papers by author's organization"></div>
+                </div>
+            </div>
+
+            <div class="filter-group collapsed" id="journal-filter">
+                <strong class="filter-title" title="Toggle visibility of the journal filter">
+                    <span>Filter by Journal</span>
+                    <span class="title-controls">
+                        <span class="reload-icon" data-target="journal" title="Reorder journals based on frequency in the current view">↻</span>
+                        <span class="toggle-arrow"></span>
+                    </span>
+                </strong>
+                <div class="filter-content">
+                    <div id="journal-list" title="Filter papers by publication journal"></div>
+                </div>
+            </div>
+
+            <div class="filter-group collapsed" id="manual-keyword-filter">
+                <strong class="filter-title" title="Toggle visibility of the keyword filter">
+                    <span>Filter by Manual Keyword</span>
+                    <span class="title-controls">
+                        <span class="reload-icon" data-target="manual-keyword" title="Reorder keywords based on frequency in the current view">↻</span>
+                        <span class="toggle-arrow"></span>
+                    </span>
+                </strong>
+                <div class="filter-content">
+                    <div id="manual-keyword-list" title="Filter papers by manually assigned keywords"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="visualization-area">
+            <div class="controls">
+
+                <div id="knn-controls-container" class="control-wrapper">
+                    <label for="knn-slider">Nearest Neighbours</label>
+                    <input type="range" id="knn-slider" min="0" max="5" step="1" value="0" title="Show links to the K-nearest neighbors for each paper">
+                    <span id="knn-value" class="value-label">0</span>
+                </div>
+
+                <div id="node-size-container" class="control-wrapper">
+                    <label for="node-size-selector" style="margin-right: 5px; white-space: nowrap;">Node Size:</label>
+                    <select id="node-size-selector" class="control-element" title="Change how paper node sizes are determined">
+                        <option value="citations" selected>Total Citations</option>
+                        <option value="normalized">Norm. In-Degree</option>
+                        <option value="authority">Authority (HITS)</option>
+                        <option value="hub">Hub (HITS)</option>
+                    </select>
+                </div>
+
+                <div id="link-mode-container" style="display: none; align-items: center;">
+                    <label for="link-mode-selector" style="margin-right: 5px; white-space: nowrap; font-weight: bold;">Link Mode:</label>
+                    <select id="link-mode-selector" class="control-element" title="Choose which type of links to show for selected papers">
+                        <option value="similarity" selected>Cosine Similarity</option>
+                        <option value="citations">Citations</option>
+                        <option value="references">References</option>
+                    </select>
+                    <div style="display: flex; align-items: center; margin-left: 10px;">
+                        <input type="checkbox" id="ignore-filters-checkbox" title="Show links to papers even if they are hidden by filters">
+                        <label for="ignore-filters-checkbox" style="margin-left: 5px; white-space: nowrap;">Ignore Filters</label>
+                    </div>
+                </div>
+
+                <div id="distance-controls" class="control-wrapper" style="display: none;">
+                    <label for="distance-slider">Cosine Distance</label>
+                    <input type="range" id="distance-slider" min="0" max="0.1" step="0.001" value="0" title="Set the maximum semantic distance for similarity links">
+                    <span id="distance-value" class="value-label">0.00</span>
+                </div>
+
+                <div id="citation-controls-container" class="control-group" style="display: none;">
+                    <label title="Show all papers within the selected cluster-year buckets"><input type="checkbox" id="show-all-papers-toggle"> Show All Papers</label>
+                    <label id="show-citations-label" style="display: none;" title="Show citation links between all visible papers"><input type="checkbox" id="show-citations-toggle"> Show Citations</label>
+                </div>
+
+                <div id="navigation-controls" class="control-group">
+                    <button id="back-to-global-view-btn" style="display: none;" class="control-element" title="Exit Ego Network and return to the previous view">Back to Global View</button>
+                </div>
+
+            </div>
+            <div id="visualization"></div>
+        </div>
+
+        <div class="info-card" id="paper-info-card">
+            <span class="close-btn" title="Close this panel">&times;</span>
+            <h2 id="info-title">Paper Title</h2>
+            <p id="info-abstract">Abstract goes here...</p>
+            
+            <h3>Authors</h3>
+            <ul id="info-authors" class="meta-list"></ul>
+            
+            <h3>Organizations</h3>
+            <ul id="info-orgs" class="meta-list"></ul>
+
+            <h3>Journal</h3>
+            <ul id="info-journal" class="meta-list"></ul>
+
+            <h3>Manual Keywords</h3>
+            <ul id="info-manual-keywords" class="meta-list"></ul>
+
+            <h3>Details</h3>
+            <p><strong>Year:</strong> <span id="info-year"></span></p>
+            <p><strong>Citations:</strong> <span id="info-citations"></span></p>
+            <div id="info-cluster-container" class="meta-list"></div>
+            
+            <button id="open-ego-network-btn" class="action-btn" title="Open a force-directed graph centered on this paper">Open Ego Network View</button>
+        </div>
+    </div>
+
+    <div class="tooltip"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script type="module" src="js/main.js"></script>
+
+</body>
+</html>
