@@ -28,3 +28,13 @@ class Config:
     STATUS_REDUCING = "reducing_dimensions"
     STATUS_FLOW = "calculating_flow"
     STATUS_SAVING = "saving_results"
+
+    # OpenAlex Settings
+    OPENALEX_API_KEY = os.getenv('OPENALEX_API_KEY')
+    OPENALEX_BASE_URL = "https://api.openalex.org"
+    DOCSET_MIN_SIZE = int(os.getenv('DOCSET_MIN_SIZE', 500))
+    DOCSET_MAX_SIZE = int(os.getenv('DOCSET_MAX_SIZE', 5000))
+
+    # Topic Modeling Settings
+    TOPIC_MAX_LEAF_SIZE = int(os.getenv('TOPIC_MAX_LEAF_SIZE', 150))
+    TOPIC_MIN_TOPIC_SIZE = int(os.getenv('TOPIC_MIN_TOPIC_SIZE', 15))

@@ -76,7 +76,9 @@ def filter_connected_component(df: pd.DataFrame) -> pd.DataFrame:
 def run_clustering(
         df: pd.DataFrame,
         topics_output_path: str,
-        min_cluster_size: int = 5
+        min_cluster_size: int = 5,
+        max_leaf_size: int = 150,
+        min_topic_size: int = 15
 ) -> Tuple[pd.DataFrame, TopicDictionary]:
     """
     Runs clustering on papers that have embeddings
@@ -101,7 +103,9 @@ def run_clustering(
         X_embeddings,
         output_path=topics_output_path,
         min_cluster_size=min_cluster_size,
-        enable_topic_modeling=True
+        enable_topic_modeling=True,
+        max_leaf_size=max_leaf_size,
+        min_topic_size=min_topic_size
     )
     logger.info(f"Topic dictionary generated with {len(topic_dict.topics)} topics.")
 

@@ -54,3 +54,91 @@ The frontend is a Single-Page Application (SPA) built with D3.js. It utilizes a 
 * **Ego-Network View**: A localized, force-directed graph focusing on the immediate neighborhood of a single selected paper. Users can adjust zero-sum sliders to weigh the importance of semantic similarity versus structural citation links.
 
 The interface is driven by dynamic queries, allowing users to filter the corpus by publication year, impact thresholds, specific authors, or journals, with immediate visual feedback.
+
+## Getting Started
+
+### 1. Environment Variables
+Create a `.env` file in the root directory. You will need API keys for the various services used.
+
+```env
+# API Keys for LLM Service
+OPENROUTER_API_KEY=your_openrouter_key
+
+# API Key for OpenAlex (free account at openalex.org -> openalex.org/settings/api)
+OPENALEX_API_KEY=your_openalex_key
+
+# Flask Configuration
+FLASK_PORT=5001
+
+```
+
+### 2. Download Models
+Before running the pipeline, ensure the SPECTER2 models are downloaded locally.
+Run the helper script:
+```bash
+python SaveModel.py
+```
+This should populate the `models/` directory.
+
+## Running the Application
+
+The primary entry point is the Flask application.
+
+```bash
+python app.py
+```
+
+Once running, the server exposes:
+-   **Home Page**: `http://localhost:5001/`
+-   **Swagger UI**: `http://localhost:5001/swagger/` (API Documentation)
+-   **Visualization**: `http://localhost:5001/visualisations/index.html`
+
+## Usage
+
+### Starting a New Analysis
+You can start a new analysis via the API.
+
+**Endpoint**: `GET /start`
+**Parameters**:
+- `docset_iri`: The IRI of the document set to process (from the SPARQL endpoint).
+- `docset_name` (optional): A human-readable name for the set.
+
+**Example**:
+```bash
+curl "http://localhost:5001/start?docset_iri=http://example.org/my-docset&docset_name=MyResearchTopic"
+```
+This returns a `uuid` for the task.
+
+### Starting a New Analysis from OpenAlex
+Instead of a Fraunhofer docset IRI, you can define a docset as an OpenAlex search+filter query. The result is automatically padded (via a one-hop citation snowball) or trimmed (by internal citation connectivity + external citation count) to land between `DOCSET_MIN_SIZE` and `DOCSET_MAX_SIZE` (500-5000 by default).
+
+**Endpoint**: `GET /start_openalex`
+**Parameters**:
+- `search` (optional): free-text query.
+- `filter` (optional): a raw OpenAlex filter string, e.g. `publication_year:2018-2024,type:article` - the same format shown by the "API" link on openalex.org, so it can be copy-pasted directly. At least one of `search`/`filter` is required.
+- `docset_name` (optional): human-readable name; defaults to the query itself.
+- `min_size` / `max_size` (optional): override the default 500/5000 bounds.
+
+**Example**:
+```bash
+curl "http://localhost:5001/start_openalex?search=topic+modeling+scientific+literature&filter=publication_year:2018-2024"
+```
+This also returns a `uuid`, pollable via the same `/status` and `/result` endpoints as above.
+
+### Checking Status
+Poll the status endpoint with the returned UUID.
+
+**Endpoint**: `GET /status?uuid=<UUID>`
+
+### Viewing Results
+Once the status is `finished`, you can retrieve the visualization URL.
+
+**Endpoint**: `GET /result?uuid=<UUID>`
+
+### Manual Execution (CLI)
+You can still run the processor manually for debugging or offline processing:
+
+```bash
+python DocumentSetProcessor.py
+```
+*Note: Ensure you modify the `__main__` block in `DocumentSetProcessor.py` to point to your desired document set hash or name.*

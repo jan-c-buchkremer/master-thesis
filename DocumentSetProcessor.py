@@ -24,6 +24,7 @@ from adapters import AutoAdapterModel
 # --- Refactored Imports ---
 # Import the modules containing the moved logic
 import DataHandler
+import OpenAlexDataHandler
 import Analysis
 from TopicDictionary import TopicDictionary
 # --- End Refactored Imports ---
@@ -44,7 +45,9 @@ class DocumentSetProcessor:
             data_root: str = "data",
             umap_neighbors: int = 5,
             umap_min_dist: float = 0.1,
-            min_cluster_size: int = 5
+            min_cluster_size: int = 5,
+            max_leaf_size: int = 150,
+            min_topic_size: int = 15
     ):
         """
         Initializes the processor, sets up data paths, and loads
@@ -60,10 +63,14 @@ class DocumentSetProcessor:
         self.umap_neighbors = umap_neighbors
         self.umap_min_dist = umap_min_dist
         self.min_cluster_size = min_cluster_size
+        self.max_leaf_size = max_leaf_size
+        self.min_topic_size = min_topic_size
 
         self.docset_name: Optional[str] = None
         self.docset_hash: Optional[str] = None
         self.docset_iri: Optional[str] = None
+        self.docset_source: str = "fraunhofer"
+        self.docset_query: Optional[Dict] = None
         self.docset_dir: Optional[str] = None
         self.docset_output_path: Optional[str] = None
         self.topics_output_path: Optional[str] = None
@@ -105,6 +112,19 @@ class DocumentSetProcessor:
         """Generates an MD5 hash from the IRI."""
         return hashlib.md5(iri.encode('utf-8')).hexdigest()
 
+    @staticmethod
+    def hash_query(
+            search: Optional[str] = None,
+            filters: Optional[Dict[str, str]] = None,
+            raw_filter: Optional[str] = None
+    ) -> str:
+        """Generates an MD5 hash from a canonicalized OpenAlex query, mirroring hash_iri."""
+        canonical = json.dumps(
+            {"search": search, "filters": filters or {}, "raw_filter": raw_filter},
+            sort_keys=True
+        )
+        return hashlib.md5(canonical.encode('utf-8')).hexdigest()
+
     def _set_output_paths(self, docset_hash: str):
         """Sets the internal output paths using the docset hash."""
         self.docset_hash = docset_hash
@@ -124,9 +144,12 @@ class DocumentSetProcessor:
         metadata = {
             "name": self.docset_name,
             "iri": self.docset_iri,
-            "hash": self.docset_hash
+            "hash": self.docset_hash,
+            "source": self.docset_source
         }
-        
+        if self.docset_query is not None:
+            metadata["query"] = self.docset_query
+
         # Preserve existing status if file exists
         if os.path.exists(self.metadata_path):
             try:
@@ -179,7 +202,9 @@ class DocumentSetProcessor:
     ):
         """Runs the full processing pipeline starting from a docset IRI."""
         logger.info(f"Starting new process from IRI: {docset_iri}")
-        
+
+        self.docset_source = "fraunhofer"
+        self.docset_query = None
         self.docset_iri = docset_iri
         # If docset_name is provided (e.g. from API), use it initially.
         # It might be overwritten if SPARQL returns a name.
@@ -205,9 +230,72 @@ class DocumentSetProcessor:
             self._save_metadata()
 
         if self.docset_df.empty:
-            logger.warning("No data fetched. Aborting process.")
-            return pd.DataFrame()
+            raise RuntimeError("No papers were found for this docset IRI.")
         logger.info(f"Successfully fetched {len(self.docset_df)} papers.")
+
+        # Run the full pipeline
+        self.run_processing_steps(
+            start_from='all',
+            human_readable=save_human_readable,
+            status_callback=status_callback
+        )
+        return self.get_dataframe()
+
+    def process_from_openalex_query(
+            self,
+            search: Optional[str] = None,
+            filters: Optional[Dict[str, str]] = None,
+            raw_filter: Optional[str] = None,
+            docset_name: Optional[str] = None,
+            save_human_readable: bool = False,
+            status_callback: Optional[Callable[[str], None]] = None,
+            min_size: int = 500,
+            max_size: int = 5000,
+    ):
+        """
+        Runs the full processing pipeline starting from an OpenAlex search+filter
+        query instead of a Fraunhofer docset IRI. The docset is the OpenAlex
+        query result itself (padded/trimmed to [min_size, max_size] papers by
+        OpenAlexDataHandler), not a pre-curated set.
+
+        `save_human_readable` defaults to False here: OpenAlexDataHandler already
+        returns human-readable fields (author names, not IRIs), so the Fraunhofer-
+        specific IRI-formatting pass in DataHandler would be a no-op at best and
+        would mangle the OpenAlex 'paper'/'url' IDs at worst.
+        """
+        logger.info(f"Starting new process from OpenAlex query: search={search!r} filters={filters!r}")
+
+        self.docset_source = "openalex"
+        self.docset_iri = None
+        self.docset_query = {"search": search, "filters": filters, "raw_filter": raw_filter}
+        self.docset_name = docset_name
+        docset_hash = self.hash_query(search, filters, raw_filter)
+
+        self._set_output_paths(docset_hash)
+        self._save_metadata()  # Save metadata early
+
+        self.topic_dict = TopicDictionary()
+
+        if status_callback:
+            status_callback("fetching_metadata")
+
+        logger.info("Fetching docset from OpenAlex...")
+        self.docset_df, fetched_name = OpenAlexDataHandler.fetch_docset_by_query(
+            search=search,
+            filters=filters,
+            raw_filter=raw_filter,
+            min_size=min_size,
+            max_size=max_size,
+        )
+
+        if not self.docset_name and fetched_name:
+            logger.info(f"Using OpenAlex query as docset name: {fetched_name}")
+            self.docset_name = fetched_name
+            self._save_metadata()
+
+        if self.docset_df.empty:
+            raise RuntimeError("No papers were found for this OpenAlex query (after connectivity filtering).")
+        logger.info(f"Successfully fetched {len(self.docset_df)} papers from OpenAlex.")
 
         # Run the full pipeline
         self.run_processing_steps(
@@ -328,7 +416,8 @@ class DocumentSetProcessor:
     def _run_cluster_step(self, human_readable: bool):
         logger.info("--- Running: Clustering ---")
         self.docset_df, self.topic_dict = Analysis.run_clustering(
-            self.docset_df, self.topics_output_path, self.min_cluster_size
+            self.docset_df, self.topics_output_path, self.min_cluster_size,
+            self.max_leaf_size, self.min_topic_size
         )
         self._save_results(human_readable)
 

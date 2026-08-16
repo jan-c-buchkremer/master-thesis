@@ -127,18 +127,47 @@
         <div class="home-section">
             <h2>New Docset</h2>
             <p>
-                Add a new set of papers for analysis by providing the docset IRI.
-                I recommend a docset of 1000 - 5000 publications.
+                Add a new set of papers for analysis, either from the Fraunhofer docset store
+                or from a live OpenAlex search+filter query.
                 The processing will start automatically and might take up to half an hour.
             </p>
+
+            <div class="form-group">
+                <label>Source</label>
+                <label style="font-weight: normal; display: inline-block; margin-right: 15px;">
+                    <input type="radio" name="docset-source" value="fraunhofer" checked> Fraunhofer (Docset IRI)
+                </label>
+                <label style="font-weight: normal; display: inline-block;">
+                    <input type="radio" name="docset-source" value="openalex"> OpenAlex (Search + Filter)
+                </label>
+            </div>
+
             <form id="process-form">
-                <div class="form-group">
+                <div class="form-group" id="fraunhofer-fields">
                     <label for="docset_iri">Docset IRI</label>
-                    <input type="url" id="docset_iri" name="docset_iri" required placeholder="http://example.com/docset-iri">
+                    <input type="url" id="docset_iri" name="docset_iri" placeholder="http://example.com/docset-iri">
                 </div>
+
+                <div id="openalex-fields" style="display: none;">
+                    <div class="form-group">
+                        <label for="openalex_search">Search query</label>
+                        <input type="text" id="openalex_search" name="openalex_search"
+                               placeholder="e.g. topic modeling scientific literature">
+                    </div>
+                    <div class="form-group">
+                        <label for="openalex_filter">Filter (optional, OpenAlex filter syntax)</label>
+                        <input type="text" id="openalex_filter" name="openalex_filter"
+                               placeholder="e.g. publication_year:2018-2024,type:article">
+                        <small style="color:#666;">
+                            Same format as the "API" link on openalex.org/works - copy-paste it here.
+                            The resulting docset is auto-sized to 500-5000 papers.
+                        </small>
+                    </div>
+                </div>
+
                 <button type="submit" id="start-btn">Start Processing</button>
             </form>
-            
+
             <div id="status-box">
                 <h3 style="margin-top: 0;">Processing Status</h3>
                 <div id="status-content"></div>
@@ -204,22 +233,51 @@
             const statusBox = document.getElementById('status-box');
             const statusContent = document.getElementById('status-content');
             const startBtn = document.getElementById('start-btn');
+            const fraunhoferFields = document.getElementById('fraunhofer-fields');
+            const openalexFields = document.getElementById('openalex-fields');
             let pollInterval = null;
+
+            // Toggle between Fraunhofer IRI and OpenAlex search+filter inputs
+            document.querySelectorAll('input[name="docset-source"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const isOpenAlex = this.value === 'openalex';
+                    openalexFields.style.display = isOpenAlex ? 'block' : 'none';
+                    fraunhoferFields.style.display = isOpenAlex ? 'none' : 'block';
+                });
+            });
 
             processForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
-                const iri = document.getElementById('docset_iri').value;
-                
+
+                const source = document.querySelector('input[name="docset-source"]:checked').value;
+
+                let endpoint, params;
+                if (source === 'openalex') {
+                    const search = document.getElementById('openalex_search').value.trim();
+                    const filter = document.getElementById('openalex_filter').value.trim();
+                    if (!search && !filter) {
+                        showError("Provide a search query, a filter, or both.");
+                        return;
+                    }
+                    const paramObj = {};
+                    if (search) paramObj.search = search;
+                    if (filter) paramObj.filter = filter;
+                    params = new URLSearchParams(paramObj);
+                    endpoint = '/start_openalex';
+                } else {
+                    const iri = document.getElementById('docset_iri').value.trim();
+                    if (!iri) {
+                        showError("Provide a docset IRI.");
+                        return;
+                    }
+                    params = new URLSearchParams({ docset_iri: iri });
+                    endpoint = '/start';
+                }
+
                 startBtn.disabled = true;
                 startBtn.textContent = "Starting...";
-                
-                // Use GET request with query parameters
-                const params = new URLSearchParams({
-                    docset_iri: iri
-                });
 
-                fetch(`/start?${params.toString()}`, {
+                fetch(`${endpoint}?${params.toString()}`, {
                     method: 'GET'
                 })
                 .then(response => response.json())

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from collections import defaultdict, deque
 from typing import Dict, List, Optional, Tuple
 import logging
@@ -115,13 +116,18 @@ class LDATopicExtractor:
 
     def generate_topic_description(self, topic_lists: List[List[str]],
                                    parent_description: str = "",
-                                   sentences: int = 2) -> str:
+                                   sentences: int = 2,
+                                   representative_titles: Optional[List[str]] = None) -> str:
         topic_texts = ["; ".join(words) for words in topic_lists]
         topics_combined = " | ".join(topic_texts)
+        titles_clause = ""
+        if representative_titles:
+            titles_joined = " | ".join(representative_titles)
+            titles_clause = f" A few representative paper titles from this cluster are: '{titles_joined}'."
         prompt = (
             f"Generate a concise description in {sentences} sentence(s) for a research cluster. "
             f"This cluster is a sub-topic of a larger area described as: '{parent_description}'. "
-            f"The cluster's unique, distinctive keywords are: '{topics_combined}'. "
+            f"The cluster's unique, distinctive keywords are: '{topics_combined}'.{titles_clause} "
             f"Combine the parent context with these unique keywords to create a specific description for this sub-cluster. "
             f"Focus on the new, specific information. Write in academic style."
         )
@@ -137,16 +143,23 @@ class LDATopicExtractor:
             logger.error(f"LLM description generation failed: {e}")
             return "Description unavailable."
 
-    def generate_cluster_name(self, parent_description: str, topic_description: str) -> str:
+    def generate_cluster_name(self, parent_description: str, topic_description: str,
+                              sibling_names: Optional[List[str]] = None) -> str:
         if not topic_description:
             return "Unnamed Cluster"
+        avoid_clause = ""
+        if sibling_names:
+            avoid_clause = (
+                f" Avoid reusing or closely paraphrasing these existing sibling topic names: "
+                f"{', '.join(sibling_names)}. Pick a name that clearly distinguishes this cluster from them."
+            )
         prompt = (
             f"You are tasked with naming a research cluster. "
             f"Its parent topic is: '{parent_description}'. "
             f"Here is this clusters description: {topic_description} "
             f"Generate a fitting title for this subtopic. For this find the unifying concept within its description. "
-            f"Find a name of maximum 3 words that reflects all topic words at once."
-            f"Only return the name (max 3 words), nothing else."
+            f"Find a name of maximum 5 words that reflects all topic words at once.{avoid_clause} "
+            f"Only return the name (max 5 words), nothing else."
         )
         try:
             response = self.client.chat.completions.create(
@@ -155,7 +168,7 @@ class LDATopicExtractor:
                 temperature=0.4,
                 max_tokens=30
             )
-            name = response.choices[0].message.content.strip().replace('"', '')
+            name = _clean_llm_name(response.choices[0].message.content)
             return name if name else "Unnamed Cluster"
         except Exception as e:
             logger.error(f"LLM naming failed: {e}")
@@ -183,14 +196,137 @@ class ClusterQualityMetrics:
         except Exception:
             return -1.0
 
-    @staticmethod
-    def should_stop_clustering(silhouette: float, cluster_size: int,
-                               min_size: int, silhouette_threshold: float = 0.85) -> bool:
-        if cluster_size < min_size:
-            return True
-        if silhouette >= silhouette_threshold:
-            return True
-        return False
+
+
+def _merge_small_clusters(local_labels: np.ndarray, reduced_embeddings: np.ndarray, min_size: int) -> np.ndarray:
+    """
+    Reassigns every point in a group smaller than `min_size` to the nearest (by centroid
+    distance) group that meets the floor, so undersized HDBSCAN groups never get promoted
+    to their own topic. Pure relabeling; returns a new label array of the same shape.
+
+    If no group meets the floor (e.g. everything is small), the original labels are
+    returned unchanged - the caller's existing "can't split further" fallback then applies.
+    """
+    labels = local_labels.copy()
+    unique, counts = np.unique(labels, return_counts=True)
+    survivors = unique[counts >= min_size]
+
+    if len(survivors) == 0:
+        # Nothing clears the floor - collapse everything into the single largest group so
+        # the caller's "can't split further" fallback kicks in, instead of leaving a pile
+        # of tiny groups that would each get promoted to their own topic.
+        largest = unique[np.argmax(counts)]
+        labels[:] = largest
+        return labels
+
+    if len(survivors) == len(unique):
+        return labels
+
+    centroids = {lbl: reduced_embeddings[labels == lbl].mean(axis=0) for lbl in unique}
+    survivor_centroids = np.array([centroids[lbl] for lbl in survivors])
+
+    for lbl in unique:
+        if lbl in survivors:
+            continue
+        dists = np.linalg.norm(survivor_centroids - centroids[lbl], axis=1)
+        target = survivors[np.argmin(dists)]
+        labels[labels == lbl] = target
+
+    return labels
+
+
+def _clean_llm_name(raw: str, max_words: int = 5) -> Optional[str]:
+    """
+    Strips markdown/quote noise from an LLM-generated cluster name and rejects anything
+    that still looks like conversational text (a rejected suggestion, a preamble sentence)
+    rather than a short title, so callers can fall back to a safe default instead of
+    writing garbage into the topic tree.
+    """
+    if not raw:
+        return None
+    name = raw.strip().splitlines()[0].strip()
+    name = re.sub(r'^\d+[.)]\s*', '', name)
+    name = name.replace('*', '').replace('"', '').replace("'", '').strip()
+    if not name or len(name.split()) > max_words + 3 or len(name) > 60:
+        return None
+    return name
+
+
+def _normalize_topic_name(name: str) -> str:
+    return " ".join(name.strip().lower().split())
+
+
+def _token_set_jaccard(a: str, b: str) -> float:
+    tokens_a, tokens_b = set(_normalize_topic_name(a).split()), set(_normalize_topic_name(b).split())
+    if not tokens_a or not tokens_b:
+        return 0.0
+    return len(tokens_a & tokens_b) / len(tokens_a | tokens_b)
+
+
+def deduplicate_topic_names(topic_dict: "TopicDictionary", extractor: "LDATopicExtractor",
+                            jaccard_threshold: float = 0.8) -> None:
+    """
+    Finds exact and near-duplicate topic names anywhere in the tree (not just siblings) and
+    asks the LLM to pick a distinct replacement name for each member of a colliding group,
+    using each topic's own description plus its ancestor breadcrumb as disambiguating context.
+    """
+    non_root_ids = [tid for tid, t in topic_dict.topics.items() if t.get("parent") is not None]
+
+    groups: List[List[int]] = []
+    seen = set()
+    for tid in non_root_ids:
+        if tid in seen:
+            continue
+        name = topic_dict.topics[tid]["name"]
+        group = [tid]
+        for other_id in non_root_ids:
+            if other_id == tid or other_id in seen:
+                continue
+            other_name = topic_dict.topics[other_id]["name"]
+            if _normalize_topic_name(name) == _normalize_topic_name(other_name) or \
+                    _token_set_jaccard(name, other_name) >= jaccard_threshold:
+                group.append(other_id)
+        if len(group) > 1:
+            groups.append(group)
+            seen.update(group)
+
+    for group in groups:
+        breadcrumbs = {}
+        for tid in group:
+            ancestors = topic_dict.get_ancestor_chain(tid)
+            breadcrumbs[tid] = " > ".join(a["name"] for a in reversed(ancestors))
+
+        members_desc = "\n".join(
+            f"{i + 1}. Current name: '{topic_dict.topics[tid]['name']}' | Path: {breadcrumbs[tid]} | "
+            f"Description: {topic_dict.topics[tid]['description']}"
+            for i, tid in enumerate(group)
+        )
+        prompt = (
+            f"The following {len(group)} research clusters ended up with the same or a near-identical name, "
+            f"even though their descriptions differ. Give each one a distinct, specific name (max 5 words) "
+            f"that reflects what makes it different from the others, based on its own description and its "
+            f"position in the topic tree.\n{members_desc}\n"
+            f"Respond with exactly {len(group)} lines, one new name per line, in the same order, nothing else."
+        )
+        try:
+            response = extractor.client.chat.completions.create(
+                model='mistralai/mistral-small-3.2-24b-instruct',
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.4,
+                max_tokens=100,
+            )
+            raw_lines = [line for line in response.choices[0].message.content.strip().splitlines() if line.strip()]
+            if len(raw_lines) != len(group):
+                logger.warning(f"Dedup rename count mismatch for group {group}: got {len(raw_lines)} lines")
+            else:
+                for tid, raw_line in zip(group, raw_lines):
+                    cleaned = _clean_llm_name(raw_line)
+                    if cleaned:
+                        topic_dict.topics[tid]["name"] = cleaned
+                    else:
+                        logger.warning(f"Dedup rename rejected malformed name for topic {tid}: {raw_line!r}")
+        except Exception as e:
+            logger.error(f"Dedup rename failed for group {group}: {e}")
 
 
 def run_clustering(
@@ -199,27 +335,45 @@ def run_clustering(
         output_path: str,
         min_cluster_size: int = 15,
         enable_topic_modeling: bool = True,
+        max_leaf_size: int = 150,
+        min_topic_size: int = 15,
 ) -> Tuple[pd.DataFrame, TopicDictionary]:
     topic_dict = TopicDictionary()
     quality_metrics = ClusterQualityMetrics()
     topic_extractor = LDATopicExtractor(api_key=OPENROUTER_API_KEY) if enable_topic_modeling else None
 
-    def _generate_cluster_info(df, indices, labels, extractor, depth, parent_description):
+    def _generate_cluster_info(df, indices, labels, reduced_embeddings, extractor, depth, parent_description):
         cluster_texts_map = defaultdict(list)
         preprocessed_texts_map = defaultdict(list)
-        for idx, local_label in zip(indices, labels):
+        titles_map = defaultdict(list)
+        embeddings_map = defaultdict(list)
+        for idx, local_label, emb in zip(indices, labels, reduced_embeddings):
             row = df.iloc[idx]
             text = f"{row['title']} {row.get('abstract', '')}"
             cluster_texts_map[local_label].append(text)
             preprocessed_texts_map[local_label].append(extractor.preprocess_text(text))
+            titles_map[local_label].append(row['title'])
+            embeddings_map[local_label].append(emb)
 
         distinctive_words_map = extractor.extract_distinctive_words(preprocessed_texts_map, n_top_words=7)
         internal_words_map = {label: extractor.extract_internal_words(texts, n_top_words=7)
                               for label, texts in preprocessed_texts_map.items()}
 
+        def _representative_titles(label, n=3):
+            titles = titles_map[label]
+            if len(titles) <= n:
+                return titles
+            embs = np.array(embeddings_map[label])
+            centroid = embs.mean(axis=0)
+            order = np.argsort(np.linalg.norm(embs - centroid, axis=1))[:n]
+            return [titles[i] for i in order]
+
         results = {}
         all_labels = set(distinctive_words_map.keys()) | set(internal_words_map.keys())
-        for label in all_labels:
+        # largest clusters first, so bigger/clearer topics claim the more obvious names first
+        ordered_labels = sorted(all_labels, key=lambda l: -len(cluster_texts_map[l]))
+        assigned_names: List[str] = []
+        for label in ordered_labels:
             combined_words = list(dict.fromkeys(internal_words_map.get(label, []) +
                                                 distinctive_words_map.get(label, [])))
             valid_words = [w for w in combined_words if w not in ["too_few_documents", "extraction_failed"]]
@@ -228,8 +382,10 @@ def run_clustering(
                 results[label] = {"desc": "Too few documents.", "name": f"Cluster {label}", "words": []}
                 continue
 
-            desc = extractor.generate_topic_description([valid_words], parent_description, 2)
-            name = extractor.generate_cluster_name(parent_description, desc)
+            desc = extractor.generate_topic_description([valid_words], parent_description, 2,
+                                                         representative_titles=_representative_titles(label))
+            name = extractor.generate_cluster_name(parent_description, desc, sibling_names=assigned_names)
+            assigned_names.append(name)
             results[label] = {"desc": desc, "name": name, "words": valid_words}
         return results
 
@@ -238,7 +394,6 @@ def run_clustering(
             indices_to_cluster: List[int],
             df_clustered: pd.DataFrame,
             label_prefix: str,
-            max_cluster_size: int,
             original_df: pd.DataFrame,
             parent_topic_id: Optional[int],
             parent_description: str,
@@ -293,26 +448,28 @@ def run_clustering(
         except Exception as e:
             logger.warning(f"Noise reassignment skipped: {e}")
 
+        # Merge undersized groups (incl. anything this aggressive retry carved out as a
+        # near-singleton) into their nearest sufficiently-large sibling before they can be
+        # promoted to their own topic.
+        local_labels = _merge_small_clusters(local_labels, reduced_embeddings, min_topic_size)
+
         unique_labels = np.unique(local_labels)
 
         # Forced Splitting Logic
         if len(unique_labels) <= 1 and not is_retry:
             return _recursive_cluster_step(all_embeddings, indices_to_cluster, df_clustered, label_prefix,
-                                           max_cluster_size, original_df, parent_topic_id,
+                                           original_df, parent_topic_id,
                                            parent_description, depth, is_retry=True)
 
         if len(unique_labels) <= 1 and is_retry:
             _finalize_cluster(indices_to_cluster, df_clustered, current_label, parent_topic_id, parent_description)
             return
 
-        # Quality Check
         if not is_retry:
             silhouette = quality_metrics.compute_silhouette(reduced_embeddings, local_labels)
-            if quality_metrics.should_stop_clustering(silhouette, n_current, min_cluster_size, 0.85):
-                _finalize_cluster(indices_to_cluster, df_clustered, current_label, parent_topic_id, parent_description)
-                return
+            logger.info(f"Cluster {current_label}: split into {len(unique_labels)} groups, silhouette={silhouette:.3f}")
 
-        cluster_info_map = _generate_cluster_info(original_df, indices_to_cluster, local_labels,
+        cluster_info_map = _generate_cluster_info(original_df, indices_to_cluster, local_labels, reduced_embeddings,
                                                   topic_extractor, depth, parent_description)
 
         index_map = dict(zip(range(n_current), indices_to_cluster))
@@ -326,11 +483,11 @@ def run_clustering(
                 parent_id=parent_topic_id, papers=original_df.iloc[cluster_indices].index.tolist()
             )
 
-            if len(cluster_indices) <= max_cluster_size:
+            if len(cluster_indices) <= max_leaf_size:
                 _finalize_cluster(cluster_indices, df_clustered, new_label, topic_id, info["name"])
             else:
                 _recursive_cluster_step(all_embeddings, cluster_indices, df_clustered, f"{new_label}_",
-                                        max_cluster_size, original_df, topic_id, info["desc"], depth + 1)
+                                        original_df, topic_id, info["desc"], depth + 1)
 
     def _finalize_cluster(indices, df, label, topic_id, name):
         df.loc[indices, 'cluster'] = label
@@ -348,8 +505,11 @@ def run_clustering(
 
     df_clustered = df_with_embeddings.reset_index(drop=True).copy()
     _recursive_cluster_step(embeddings, df_clustered.index.tolist(), df_clustered, "",
-                            int(len(df_with_embeddings) * 0.3), df_with_embeddings,
-                            root_topic_id, global_description, 0)
+                            df_with_embeddings, root_topic_id, global_description, 0)
+
+    # Resolve any exact/near-duplicate names anywhere in the tree before saving
+    if enable_topic_modeling and len(topic_dict.topics) > 1:
+        deduplicate_topic_names(topic_dict, topic_extractor)
 
     # Assign colors to leaf nodes before saving
     if enable_topic_modeling and len(topic_dict.topics) > 1:
