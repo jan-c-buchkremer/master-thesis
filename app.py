@@ -108,6 +108,49 @@ def get_hash_from_uuid(task_uuid):
 
 
 # --- Background Worker ---
+def background_worker_openalex(docset_hash, search, raw_filter, docset_name, min_size, max_size):
+    """
+    Background task to process a document set sourced from an OpenAlex search+filter query.
+    """
+    try:
+        if not processor:
+            raise Exception("DocumentSetProcessor is not initialized.")
+
+        logging.info(
+            f"Task for {docset_hash}: Starting OpenAlex processing "
+            f"(search={search!r}, filter={raw_filter!r})"
+        )
+
+        def update_status(new_status):
+            processor.update_status(new_status)
+            logging.info(f"Docset {docset_hash} status updated to: {new_status}")
+
+        processor.docset_hash = docset_hash
+        processor.docset_dir = os.path.join(processor.data_root, docset_hash)
+        processor.metadata_path = os.path.join(processor.docset_dir, "metadata.json")
+        processor.update_status(Config.STATUS_RUNNING)
+
+        processor.process_from_openalex_query(
+            search=search,
+            raw_filter=raw_filter,
+            docset_name=docset_name,
+            status_callback=update_status,
+            min_size=min_size,
+            max_size=max_size,
+        )
+
+        logging.info(f"Docset {docset_hash}: Processing complete.")
+        processor.update_status(Config.STATUS_FINISHED[0])
+
+    except Exception as e:
+        logging.error(f"Docset {docset_hash}: Failed with error: {e}", exc_info=True)
+        if not processor.metadata_path:
+            processor.docset_hash = docset_hash
+            processor.docset_dir = os.path.join(processor.data_root, docset_hash)
+            processor.metadata_path = os.path.join(processor.docset_dir, "metadata.json")
+        processor.update_status(Config.STATUS_ERROR[0], str(e))
+
+
 def background_worker(docset_hash, docset_iri, docset_name):
     """
     Background task to process the document set.
@@ -227,6 +270,73 @@ def start():
     return jsonify({"uuid": task_uuid}), 202
 
 
+@app.route("/start_openalex", methods=["GET"])
+def start_openalex():
+    """
+    Starts processing of a new document set sourced from an OpenAlex search+filter
+    query, instead of a Fraunhofer docset IRI.
+    """
+    search = request.args.get('search')
+    # Raw OpenAlex filter string, e.g. "publication_year:2015-2024,type:article" -
+    # the same format the OpenAlex website's own "API" link produces, so it can be copy-pasted.
+    raw_filter = request.args.get('filter')
+    docset_name = request.args.get('docset_name')
+    min_size = request.args.get('min_size', type=int) or Config.DOCSET_MIN_SIZE
+    max_size = request.args.get('max_size', type=int) or Config.DOCSET_MAX_SIZE
+
+    if not search and not raw_filter:
+        return jsonify({"error": "At least one of 'search' or 'filter' is required."}), 400
+
+    # 1. Generate UUID for this specific request
+    task_uuid = str(uuid.uuid4())
+
+    # 2. Calculate hash for this query
+    docset_hash = DocumentSetProcessor.hash_query(search=search, raw_filter=raw_filter)
+
+    # 3. Save the mapping (UUID -> Hash)
+    save_task_mapping(task_uuid, docset_hash)
+
+    # 4. Reuse an existing task/result for this hash when possible.
+    existing_metadata = read_metadata(docset_hash)
+    if existing_metadata:
+        existing_status = existing_metadata.get("status")
+
+        if existing_status in Config.STATUS_FINISHED and has_processed_result(docset_hash):
+            logging.info(f"Docset {docset_hash} already processed. Reusing existing result.")
+            return jsonify({"uuid": task_uuid}), 202
+
+        if existing_status and existing_status not in Config.STATUS_ERROR:
+            logging.info(
+                f"Docset {docset_hash} already in progress (status={existing_status}). Reusing existing task state.")
+            return jsonify({"uuid": task_uuid}), 202
+
+    # 5. Initialize metadata file for a new/restarted run
+    metadata_path = get_metadata_path(docset_hash)
+    os.makedirs(os.path.dirname(metadata_path), exist_ok=True)
+
+    initial_metadata = {
+        "name": docset_name or search or raw_filter,
+        "iri": None,
+        "hash": docset_hash,
+        "source": "openalex",
+        "query": {"search": search, "filters": None, "raw_filter": raw_filter},
+        "status": Config.STATUS_PENDING
+    }
+
+    with open(metadata_path, 'w', encoding='utf-8') as f:
+        json.dump(initial_metadata, f, indent=2)
+
+    # 6. Start the worker (using the hash)
+    thread = Thread(
+        target=background_worker_openalex,
+        args=(docset_hash, search, raw_filter, docset_name, min_size, max_size)
+    )
+    thread.start()
+
+    # 7. Return the UUID
+    return jsonify({"uuid": task_uuid}), 202
+
+
 @app.route("/status", methods=["GET"])
 def status():
     """
@@ -246,10 +356,13 @@ def status():
     if not metadata:
         return jsonify({"error": "Metadata not found for this task"}), 404
 
-    return jsonify({
+    response = {
         "uuid": task_uuid,
         "status": metadata.get("status", "unknown")
-    })
+    }
+    if metadata.get("error"):
+        response["error"] = metadata["error"]
+    return jsonify(response)
 
 
 @app.route("/result", methods=["GET"])

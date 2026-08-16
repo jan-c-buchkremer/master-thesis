@@ -46,6 +46,26 @@ class TopicDictionary:
         """Retrieve a topic by its ID."""
         return self.topics.get(topic_id)
 
+    def get_ancestor_chain(self, topic_id: int) -> List[Dict]:
+        """Return the chain of topic dicts from this topic's parent up to the root."""
+        chain = []
+        current = self.topics.get(topic_id)
+        while current and current.get("parent") is not None:
+            parent = self.topics.get(current["parent"])
+            if parent is None:
+                break
+            chain.append(parent)
+            current = parent
+        return chain
+
+    def get_siblings(self, topic_id: int) -> List[Dict]:
+        """Return topics sharing the same parent as this topic, excluding itself."""
+        topic = self.topics.get(topic_id)
+        if not topic:
+            return []
+        parent_id = topic.get("parent")
+        return [t for tid, t in self.topics.items() if tid != topic_id and t.get("parent") == parent_id]
+
     def save_to_json(self, filepath: str):
         """Save the topic dictionary to a JSON file."""
         os.makedirs(os.path.dirname(filepath), exist_ok=True)

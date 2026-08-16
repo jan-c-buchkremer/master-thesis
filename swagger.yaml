@@ -26,6 +26,44 @@ paths:
         400:
           description: "Missing required parameters"
 
+  /start_openalex:
+    get:
+      summary: "Start the visualization process from an OpenAlex query"
+      description: "Initiates graph analysis for a docset defined by an OpenAlex search+filter query (instead of a Fraunhofer docset IRI) and returns a task UUID. The resulting docset is padded (via citation snowball) or trimmed (by internal connectivity + citation count) to fall within [min_size, max_size]."
+      parameters:
+        - name: "search"
+          in: "query"
+          required: false
+          type: "string"
+          description: "Free-text search query (OpenAlex 'search' param). At least one of `search` or `filter` is required."
+        - name: "filter"
+          in: "query"
+          required: false
+          type: "string"
+          description: "Raw OpenAlex filter string, e.g. 'publication_year:2015-2024,type:article' - the same format shown by the OpenAlex website's own API link, so it can be copy-pasted directly."
+        - name: "docset_name"
+          in: "query"
+          required: false
+          type: "string"
+          description: "Optional human-readable name; defaults to the search query or filter string."
+        - name: "min_size"
+          in: "query"
+          required: false
+          type: "integer"
+          description: "Minimum docset size before citation-snowball padding kicks in (default: 500)."
+        - name: "max_size"
+          in: "query"
+          required: false
+          type: "integer"
+          description: "Maximum docset size before connectivity-based trimming kicks in (default: 5000)."
+      responses:
+        202:
+          description: "Process started"
+          schema:
+            $ref: "#/definitions/TaskStarted"
+        400:
+          description: "Missing required parameters"
+
   /status:
     get:
       summary: "Get process status"
