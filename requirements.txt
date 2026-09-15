@@ -1,0 +1,30 @@
+# Runtime dependencies, derived from the imports in *.py and pinned to the
+# versions installed in the project's .venv (Python 3.13).
+
+# Web API (app.py)
+Flask==3.1.2
+Flask-Cors==6.0.2
+flask-swagger-ui==5.21.0
+python-dotenv==1.2.1
+
+# Data handling (DataHandler.py, OpenAlexDataHandler.py, Analysis.py)
+pandas==2.3.3
+numpy==2.3.4
+requests==2.32.5
+SPARQLWrapper==2.0.0
+
+# Embeddings (DocumentSetProcessor.py, Analysis.py, SaveModel.py)
+torch==2.9.0
+transformers==4.51.3
+adapters==1.2.0
+huggingface-hub==0.35.3
+
+# Clustering / topic modeling (TopicModeling.py, Analysis.py)
+umap-learn==0.5.8
+hdbscan==0.8.40
+scikit-learn==1.7.2
+nltk==3.9.2
+openai==2.7.1
+
+# Colour assignment for topics (TopicDictionary.py)
+matplotlib==3.10.7
