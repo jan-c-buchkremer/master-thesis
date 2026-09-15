@@ -1,5 +1,7 @@
 # Finding the Needle in a Haystack
 
+[![tests](https://github.com/jan-c-buchkremer/master-thesis/actions/workflows/tests.yml/badge.svg)](https://github.com/jan-c-buchkremer/master-thesis/actions/workflows/tests.yml)
+
 For my Master Thesis I developed the Finding-The-Needle System (FTN-System), a visual analytics tool for large sets of research papers within the KATI-Lab of the Fraunhofer FKIE institute. Its source code is presented in this repository.
 
 The system requires a direct connection to the KATI database to function, consider this repository mainly demonstrative.
@@ -142,3 +144,23 @@ You can still run the processor manually for debugging or offline processing:
 python DocumentSetProcessor.py
 ```
 *Note: Ensure you modify the `__main__` block in `DocumentSetProcessor.py` to point to your desired document set hash or name.*
+
+## Development
+
+```bash
+# 1. Create and activate a virtual environment
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+# source .venv/bin/activate     # Linux / macOS
+
+# 2. Install runtime + development dependencies
+python -m pip install -r requirements.txt -r requirements-dev.txt
+
+# 3. Configure environment variables
+cp .env.example .env            # then fill in the API keys
+
+# 4. Run the tests (offline; no API keys or downloaded models required)
+python -m pytest -q
+```
+
+The test suite runs automatically on GitHub Actions for every push and pull request (`.github/workflows/tests.yml`).
