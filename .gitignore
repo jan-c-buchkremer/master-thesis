@@ -1,7 +1,28 @@
-.env
-.venv/
+# --- Python ---
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# --- Secrets / local config ---
+.env
+.env.*
+!.env.example
+
+# --- IDE / tooling ---
 .idea/
+.vscode/
+.claude/settings.local.json
+
+# --- Downloaded models (see SaveModel.py) ---
 models/
-data/*/
+
+# --- Generated pipeline output ---
+# data/<hash>/ docset folders, data/tasks/ uuid mappings and the rebuilt index.json
+data/*
+!data/.gitkeep
+output/
+standalone_output/
