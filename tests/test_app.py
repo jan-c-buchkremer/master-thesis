@@ -92,3 +92,24 @@ def test_result_for_finished_and_failed_tasks(client, app_module, tmp_path):
     status = client.get("/status", query_string={"uuid": "uuid-failed"})
     assert status.status_code == 200
     assert status.get_json()["error"] == "boom"
+
+
+def test_healthz_reports_unloaded_model(client):
+    # conftest patches model loading out, so the processor has no model
+    resp = client.get("/healthz")
+    assert resp.status_code == 503
+    assert resp.get_json()["status"] == "unavailable"
+
+
+def test_urls_respect_proxy_prefix(client, app_module):
+    # Caddy mounts the app under /thesis and sends the prefix in X-Forwarded-Prefix
+    headers = {"X-Forwarded-Prefix": "/thesis", "X-Forwarded-Proto": "https", "X-Forwarded-Host": "example.test"}
+    app_module.save_task_mapping("uuid-prefixed", "d" * 32)
+    _touch_result_files(_write_metadata(app_module.Config.DATA_DIR, "d" * 32, status="finished"), "d" * 32)
+
+    body = client.get("/result", query_string={"uuid": "uuid-prefixed"}, headers=headers).get_json()
+    assert body["url"] == f"https://example.test/thesis/visualisations/index.html?docset={'d' * 32}"
+
+    spec = client.get("/swagger.yaml", headers=headers).get_data(as_text=True)
+    assert 'basePath: "/thesis"' in spec
+    assert 'basePath: "/"' in client.get("/swagger.yaml").get_data(as_text=True)
