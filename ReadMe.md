@@ -164,3 +164,19 @@ python -m pytest -q
 ```
 
 The test suite runs automatically on GitHub Actions for every push and pull request (`.github/workflows/tests.yml`).
+On pushes to `main` and `deploy` it also builds the Docker image and publishes it to
+`ghcr.io/jan-c-buchkremer/master-thesis` (tagged with the branch name and short commit SHA).
+
+## Docker
+
+```bash
+docker build -t master-thesis .
+docker run -p 5001:5001 --env-file .env \
+  -v ./data:/app/data -v ./models:/app/models master-thesis
+```
+
+The container runs the app with gunicorn (one worker, several threads; see `gunicorn.conf.py`).
+On first start it downloads the SPECTER2 models into `/app/models` (about 420 MB), so keep that
+directory on a volume. `GET /healthz` returns 200 once the model is loaded. Behind a reverse
+proxy the app can be mounted under a path prefix sent in `X-Forwarded-Prefix` (e.g. `/thesis`);
+all frontend URLs are relative. `DEBUG` is off unless set in the environment.
