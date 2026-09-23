@@ -38,8 +38,12 @@ The Ego-Network View of a (highly-cited) publication, changing the view to a sub
 
 The application is structured into three primary layers: a Flask API, a Python processing backend, and a D3.js frontend.
 
-### 1. API & Orchestration (`app.py`)
-A Flask-based REST API manages background processing tasks, serves the frontend interface, and handles static file delivery.
+### 1. API & Orchestration (`app.py`, `worker.py`, `Database.py`)
+A Flask-based REST API accepts processing requests, serves the frontend interface, and handles static file delivery.
+Requests are recorded in a database (Postgres in production, SQLite locally) and queued as jobs; a separate
+worker process (`worker.py`) takes jobs from the queue and runs the pipeline. Docset status, the task uuids
+and the queue live in the database; the pipeline results stay JSON files under `data/<hash>/`.
+The schema is managed with Alembic (`migrations/`).
 
 ### 2. Core Processing Backend
 The central engine coordinates data acquisition, semantic embedding, clustering, and topic modeling:
@@ -80,14 +84,17 @@ Run the helper script:
 ```bash
 python SaveModel.py
 ```
-This should populate the `models/` directory.
+This should populate the `models/` directory. (The worker also downloads them on first start if missing.)
 
 ## Running the Application
 
-The primary entry point is the Flask application.
+The application consists of the Flask web app and the pipeline worker, sharing one database.
+Without `DATABASE_URL` both use a local SQLite file (`local.db`).
 
 ```bash
-python app.py
+alembic upgrade head      # create / update the database schema (once, and after pulling changes)
+python app.py             # web app
+python worker.py          # in a second terminal: runs the queued pipeline jobs
 ```
 
 Once running, the server exposes:
@@ -161,22 +168,31 @@ cp .env.example .env            # then fill in the API keys
 
 # 4. Run the tests (offline; no API keys or downloaded models required)
 python -m pytest -q
+# against Postgres instead of SQLite (the tables in that database are dropped and recreated!):
+# TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost/thesis_test python -m pytest -q
 ```
 
-The test suite runs automatically on GitHub Actions for every push and pull request (`.github/workflows/tests.yml`).
+After changing the tables in `Database.py`, add a migration with
+`alembic revision --autogenerate -m "what changed"` and review it; `tests/test_migrations.py` fails
+while the migrations and `Database.py` disagree.
+
+The test suite runs automatically on GitHub Actions for every push and pull request (`.github/workflows/tests.yml`),
+once with SQLite and once with Postgres.
 On pushes to `main` and `deploy` it also builds the Docker image and publishes it to
 `ghcr.io/jan-c-buchkremer/master-thesis` (tagged with the branch name and short commit SHA).
 
 ## Docker
 
 ```bash
-docker build -t master-thesis .
-docker run -p 5001:5001 --env-file .env \
-  -v ./data:/app/data -v ./models:/app/models master-thesis
+docker compose up --build        # Postgres, migrations, web app and worker -> http://localhost:5001/
 ```
 
-The container runs the app with gunicorn (one worker, several threads; see `gunicorn.conf.py`).
-On first start it downloads the SPECTER2 models into `/app/models` (about 420 MB), so keep that
-directory on a volume. `GET /healthz` returns 200 once the model is loaded. Behind a reverse
-proxy the app can be mounted under a path prefix sent in `X-Forwarded-Prefix` (e.g. `/thesis`);
-all frontend URLs are relative. `DEBUG` is off unless set in the environment.
+One image serves three roles: the web app (default command, gunicorn; see `gunicorn.conf.py`), the worker
+(`python worker.py`) and the migrations (`alembic upgrade head`). The worker downloads the SPECTER2 models into
+`/app/models` on first start (about 420 MB), so keep that directory on a volume. `GET /healthz` returns 200
+while the database is reachable. Behind a reverse proxy the app can be mounted under a path prefix sent in
+`X-Forwarded-Prefix` (e.g. `/thesis`); all frontend URLs are relative. `DEBUG` is off unless set in the environment.
+
+Stopping the worker (SIGTERM) puts a running job back into the queue; if a worker dies without that, its job is
+picked up again once its heartbeat is older than `WORKER_STALE_SECONDS` (default 180), at most
+`WORKER_MAX_ATTEMPTS` (default 3) times. Several workers can run side by side.

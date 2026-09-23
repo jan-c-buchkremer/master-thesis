@@ -24,10 +24,14 @@ COPY --chown=thesis:thesis . .
 RUN mkdir -p data models && chown thesis:thesis data models
 USER thesis
 
-# data/ holds the processed docsets, models/ the SPECTER2 base model and adapter
+# One image, three roles (see the compose file in the infra repo):
+#   web (default)   gunicorn -c gunicorn.conf.py app:app
+#   worker          python worker.py      (downloads the SPECTER2 models into models/ on first start)
+#   migrations      alembic upgrade head
+# data/ holds the processed docsets, models/ the SPECTER2 base model and adapter (worker only)
 VOLUME ["/app/data", "/app/models"]
 EXPOSE 5001
-HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+# for the web role; the worker overrides it with a check on its alive file
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD python -c "import os, urllib.request; urllib.request.urlopen(f'http://127.0.0.1:{os.getenv(\"FLASK_PORT\", \"5001\")}/healthz', timeout=4)"
-ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:app"]

@@ -25,3 +25,6 @@ data/*
 !data/.gitkeep
 output/
 standalone_output/
+
+# --- Local SQLite database (DATABASE_URL default) ---
+*.db

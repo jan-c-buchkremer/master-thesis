@@ -10,6 +10,15 @@ class Config:
     PORT = int(os.getenv('FLASK_PORT', 5001))
     DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
+    # Database: Postgres in production (postgresql+psycopg://...), SQLite file for local development
+    DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///local.db')
+
+    # Worker: seconds between queue polls, heartbeat interval, and when a silent job counts as abandoned
+    WORKER_POLL_SECONDS = float(os.getenv('WORKER_POLL_SECONDS', 2))
+    WORKER_HEARTBEAT_SECONDS = int(os.getenv('WORKER_HEARTBEAT_SECONDS', 30))
+    WORKER_STALE_SECONDS = int(os.getenv('WORKER_STALE_SECONDS', 180))
+    WORKER_MAX_ATTEMPTS = int(os.getenv('WORKER_MAX_ATTEMPTS', 3))
+
     # Swagger Settings
     SWAGGER_URL = os.getenv('SWAGGER_URL', '/swagger')
     API_URL = os.getenv('API_URL', '/swagger.json')

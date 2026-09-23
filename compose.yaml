@@ -1,0 +1,49 @@
+# Full stack for local use: docker compose up --build   ->  http://localhost:5001/
+# (The server runs the same image from GHCR with its own compose file in the infra repo.)
+x-app: &app
+  build: .
+  env_file:
+    - path: .env      # API keys, see .env.example
+      required: false
+  environment:
+    DATABASE_URL: postgresql+psycopg://thesis:thesis@db:5432/thesis
+  volumes:
+    - ./data:/app/data
+    - ./models:/app/models
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: thesis
+      POSTGRES_PASSWORD: thesis
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "thesis"]
+      interval: 5s
+      retries: 10
+
+  migrate:
+    <<: *app
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db: {condition: service_healthy}
+
+  web:
+    <<: *app
+    ports: ["5001:5001"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  worker:
+    <<: *app
+    command: ["python", "worker.py"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/worker-alive') > 90)"]
+      start_period: 10m
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+volumes:
+  pgdata:

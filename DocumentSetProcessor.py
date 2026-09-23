@@ -13,7 +13,6 @@ This class coordinates other modules to perform the pipeline:
 
 import os
 import logging
-import hashlib
 import json
 from typing import Dict, List, Optional, Callable
 import pandas as pd
@@ -24,6 +23,7 @@ from adapters import AutoAdapterModel
 # --- Refactored Imports ---
 # Import the modules containing the moved logic
 import DataHandler
+import DocsetHash
 import OpenAlexDataHandler
 import Analysis
 from TopicDictionary import TopicDictionary
@@ -107,23 +107,9 @@ class DocumentSetProcessor:
             self.model = None
             self.tokenizer = None
 
-    @staticmethod
-    def hash_iri(iri: str) -> str:
-        """Generates an MD5 hash from the IRI."""
-        return hashlib.md5(iri.encode('utf-8')).hexdigest()
-
-    @staticmethod
-    def hash_query(
-            search: Optional[str] = None,
-            filters: Optional[Dict[str, str]] = None,
-            raw_filter: Optional[str] = None
-    ) -> str:
-        """Generates an MD5 hash from a canonicalized OpenAlex query, mirroring hash_iri."""
-        canonical = json.dumps(
-            {"search": search, "filters": filters or {}, "raw_filter": raw_filter},
-            sort_keys=True
-        )
-        return hashlib.md5(canonical.encode('utf-8')).hexdigest()
+    # Docset identifiers live in DocsetHash (importable without torch)
+    hash_iri = staticmethod(DocsetHash.hash_iri)
+    hash_query = staticmethod(DocsetHash.hash_query)
 
     def _set_output_paths(self, docset_hash: str):
         """Sets the internal output paths using the docset hash."""
