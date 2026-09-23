@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Research Paper Pipeline</title>
     <!-- Link to the existing stylesheet from the visualisation -->
-    <link rel="stylesheet" href="/visualisations/style.css">
+    <link rel="stylesheet" href="visualisations/style.css">
     <style>
         /* Add specific styles for the home page layout */
         body {
@@ -176,7 +176,7 @@
         
         <div class="home-section">
             <p style="font-size: 0.9em; color: #666;">
-                <a href="/swagger/" target="_blank">API Documentation (Swagger UI)</a>
+                <a href="swagger/" target="_blank">API Documentation (Swagger UI)</a>
             </p>
         </div>
     </div>
@@ -186,7 +186,7 @@
             const select = document.getElementById('docset-select');
             
             // --- 1. Load Docsets for Exploration ---
-            fetch('/data/index.json')
+            fetch('data/index.json')
                 .then(response => response.json())
                 .then(docsets => {
                     select.innerHTML = '<option value="">-- Select a Docset --</option>';
@@ -222,7 +222,7 @@
                 const selectedHash = select.value;
                 if (selectedHash) {
                     // Open in new tab
-                    window.open(`/visualisations/index.html?docset=${encodeURIComponent(selectedHash)}`, '_blank');
+                    window.open(`visualisations/index.html?docset=${encodeURIComponent(selectedHash)}`, '_blank');
                 } else {
                     alert('Please select a document set.');
                 }
@@ -263,7 +263,7 @@
                     if (search) paramObj.search = search;
                     if (filter) paramObj.filter = filter;
                     params = new URLSearchParams(paramObj);
-                    endpoint = '/start_openalex';
+                    endpoint = 'start_openalex';
                 } else {
                     const iri = document.getElementById('docset_iri').value.trim();
                     if (!iri) {
@@ -271,7 +271,7 @@
                         return;
                     }
                     params = new URLSearchParams({ docset_iri: iri });
-                    endpoint = '/start';
+                    endpoint = 'start';
                 }
 
                 startBtn.disabled = true;
@@ -303,7 +303,7 @@
                 statusContent.innerHTML = `<div class="spinner"></div> Processing started. Task ID: ${uuid}<br>Please wait, this may take a while...`;
                 
                 pollInterval = setInterval(() => {
-                    fetch(`/status?uuid=${uuid}`)
+                    fetch(`status?uuid=${uuid}`)
                         .then(res => res.json())
                         .then(data => {
                             if (data.status === 'finished' || data.status === 'success' || data.status === 'done' || data.status === 'completed') {
@@ -324,7 +324,7 @@
             }
 
             function getResult(uuid) {
-                fetch(`/result?uuid=${uuid}`)
+                fetch(`result?uuid=${uuid}`)
                     .then(res => res.json())
                     .then(data => {
                         if (data.url) {

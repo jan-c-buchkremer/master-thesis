@@ -502,7 +502,7 @@ export default class Visualization {
 
         if (docsetHash) {
             // Fetch index to find the human readable name
-            d3.json("/data/index.json").then(docsetList => {
+            d3.json("../data/index.json").then(docsetList => {
                 let docsetName = docsetHash; // Default to hash if not found
                 if (docsetList && Array.isArray(docsetList)) {
                     const entry = docsetList.find(d => d.hash === docsetHash);
@@ -614,8 +614,8 @@ export default class Visualization {
             .style("font-size", "24px")
             .text(`Loading ${docsetName}...`);
 
-        const paperDataPath = `/data/${docsetHash}/${docsetHash}_docset.json`;
-        const topicDataPath = `/data/${docsetHash}/${docsetHash}_topics.json`;
+        const paperDataPath = `../data/${docsetHash}/${docsetHash}_docset.json`;
+        const topicDataPath = `../data/${docsetHash}/${docsetHash}_topics.json`;
 
         Promise.all([
             d3.json(paperDataPath).catch(err => { console.error(`Error loading ${paperDataPath}`, err); return null; }),

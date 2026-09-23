@@ -8,7 +8,7 @@ class Config:
     # API Settings
     HOST = os.getenv('HOST', '0.0.0.0')
     PORT = int(os.getenv('FLASK_PORT', 5001))
-    DEBUG = os.getenv('DEBUG', 'True').lower() in ['true', '1', 'yes']
+    DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
     # Swagger Settings
     SWAGGER_URL = os.getenv('SWAGGER_URL', '/swagger')
