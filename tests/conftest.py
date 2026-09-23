@@ -4,12 +4,13 @@ Shared pytest fixtures.
 Dummy environment variables are set *before* any project module is imported so
 that Config.py / TopicModeling.py / OpenAlexDataHandler.py import cleanly without
 a .env file. No test in this suite performs network I/O or loads the SPECTER2
-model: the Flask app is imported with model loading patched out, and every
-filesystem write is redirected to a pytest tmp_path.
+model, and every filesystem write is redirected to a pytest tmp_path.
+
+Each test gets an empty database: a SQLite file in tmp_path, or the Postgres
+database in TEST_DATABASE_URL (CI), whose tables are dropped and recreated.
 """
 import os
 import sys
-from unittest.mock import patch
 
 import pytest
 
@@ -25,36 +26,34 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 
-class _DummyThread:
-    """Stand-in for threading.Thread so /start never runs the real pipeline."""
+@pytest.fixture
+def db(tmp_path, monkeypatch):
+    """Empty database for one test; yields the Database module."""
+    import Database
+    from Config import Config
 
-    def __init__(self, target=None, args=(), kwargs=None, **_):
-        self.target = target
-        self.args = args
-        self.kwargs = kwargs or {}
-        self.started = False
-
-    def start(self):
-        self.started = True
+    url = os.environ.get("TEST_DATABASE_URL") or f"sqlite:///{tmp_path / 'test.db'}"
+    monkeypatch.setattr(Config, "DATABASE_URL", url)
+    Database.reset_engine()
+    Database.metadata.drop_all(Database.get_engine())
+    Database.create_schema()
+    yield Database
+    Database.reset_engine()
 
 
 @pytest.fixture(scope="session")
 def app_module():
-    """Imports app.py once, with SPECTER2 model loading disabled."""
-    import DocumentSetProcessor as dsp
-
-    with patch.object(dsp.DocumentSetProcessor, "_load_specter_model", lambda self: None):
-        import app as app_mod
+    """Imports app.py once (it does not load the model; the worker does)."""
+    import app as app_mod
     return app_mod
 
 
 @pytest.fixture
-def client(app_module, tmp_path, monkeypatch):
-    """Flask test client with data/ redirected to a temp dir and threads stubbed out."""
+def client(app_module, db, tmp_path, monkeypatch):
+    """Flask test client with data/ redirected to a temp dir and a fresh database."""
     from Config import Config
 
     monkeypatch.setattr(Config, "DATA_DIR", str(tmp_path), raising=False)
-    monkeypatch.setattr(app_module, "Thread", _DummyThread)
     app_module.app.config["TESTING"] = True
     with app_module.app.test_client() as c:
         yield c

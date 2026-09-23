@@ -1,29 +1,33 @@
 """
 Route tests against the Flask app via test_client(). Response codes and shapes
-follow swagger.yaml. The background processing thread is stubbed out (conftest),
-so nothing here touches SPARQL, OpenAlex, OpenRouter or the SPECTER2 model.
+follow swagger.yaml. The app only queues jobs (the worker runs them), so nothing
+here touches SPARQL, OpenAlex, OpenRouter or the SPECTER2 model.
 """
-import json
 import os
 import re
 
-from DocumentSetProcessor import DocumentSetProcessor
+import DocsetHash
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def _write_metadata(data_dir, docset_hash, **fields):
+def _add_docset(db, docset_hash, status, error=None):
+    with db.get_engine().begin() as conn:
+        conn.execute(db.docsets.insert().values(hash=docset_hash, name=docset_hash, source="openalex",
+                                                status=status, error=error))
+
+
+def _touch_result_files(data_dir, docset_hash):
     d = os.path.join(data_dir, docset_hash)
     os.makedirs(d, exist_ok=True)
-    with open(os.path.join(d, "metadata.json"), "w", encoding="utf-8") as f:
-        json.dump(fields, f)
-    return d
-
-
-def _touch_result_files(docset_dir, docset_hash):
     for suffix in ("_docset.json", "_topics.json"):
-        with open(os.path.join(docset_dir, f"{docset_hash}{suffix}"), "w", encoding="utf-8") as f:
+        with open(os.path.join(d, f"{docset_hash}{suffix}"), "w", encoding="utf-8") as f:
             f.write("[]")
+
+
+def _jobs(db):
+    with db.get_engine().connect() as conn:
+        return [dict(r) for r in conn.execute(db.jobs.select().order_by(db.jobs.c.id)).mappings()]
 
 
 def test_swagger_paths_are_registered_routes(app_module):
@@ -47,19 +51,20 @@ def test_error_responses_match_swagger(client):
         assert resp.get_json() == {"error": "Unknown uuid"}
 
 
-def test_start_creates_task_mapping_and_pending_metadata(client, tmp_path):
+def test_start_queues_a_job_and_reports_pending(client, db):
     iri = "http://int.fraunhofer.de/linkeddata/resources/sets/test"
     resp = client.get("/start", query_string={"docset_iri": iri})
     assert resp.status_code == 202
     task_uuid = resp.get_json()["uuid"]
     assert re.fullmatch(r"[0-9a-f-]{36}", task_uuid)
 
-    docset_hash = DocumentSetProcessor.hash_iri(iri)
-    with open(tmp_path / "tasks" / f"{task_uuid}.json", encoding="utf-8") as f:
-        assert json.load(f) == {"docset_hash": docset_hash}
-    with open(tmp_path / docset_hash / "metadata.json", encoding="utf-8") as f:
-        meta = json.load(f)
-    assert meta == {"name": iri, "iri": iri, "hash": docset_hash, "status": "pending"}
+    docset_hash = DocsetHash.hash_iri(iri)
+    assert db.get_task_docset_hash(task_uuid) == docset_hash
+    docset = db.get_docset(docset_hash)
+    assert (docset["name"], docset["iri"], docset["source"], docset["status"]) == (iri, iri, "fraunhofer", "pending")
+    [job] = _jobs(db)
+    assert (job["docset_hash"], job["kind"], job["status"], job["params"]) == (
+        docset_hash, "iri", "queued", {"docset_iri": iri})
 
     status = client.get("/status", query_string={"uuid": task_uuid})
     assert status.status_code == 200
@@ -71,13 +76,44 @@ def test_start_creates_task_mapping_and_pending_metadata(client, tmp_path):
     assert result.get_json()["status"] == "pending"
 
 
-def test_result_for_finished_and_failed_tasks(client, app_module, tmp_path):
+def test_start_openalex_queues_query_params(client, db):
+    resp = client.get("/start_openalex", query_string={"search": "graphs", "filter": "type:article", "min_size": 50})
+    assert resp.status_code == 202
+    [job] = _jobs(db)
+    assert job["kind"] == "openalex"
+    assert job["docset_hash"] == DocsetHash.hash_query(search="graphs", raw_filter="type:article")
+    assert job["params"] == {"search": "graphs", "raw_filter": "type:article", "docset_name": None,
+                             "min_size": 50, "max_size": 5000}
+
+
+def test_repeated_start_reuses_queued_and_finished_runs(client, db, tmp_path):
+    iri = "http://example.org/set"
+    uuids = [client.get("/start", query_string={"docset_iri": iri}).get_json()["uuid"] for _ in range(2)]
+    assert len(set(uuids)) == 2
+    assert len(_jobs(db)) == 1  # the second request joined the queued run
+
+    # finished with result files -> reused, no new job even after the first job is done
+    docset_hash = DocsetHash.hash_iri(iri)
+    db.finish_job(_jobs(db)[0]["id"])
+    db.set_docset_status(docset_hash, "finished")
+    _touch_result_files(tmp_path, docset_hash)
+    client.get("/start", query_string={"docset_iri": iri})
+    assert len(_jobs(db)) == 1
+
+    # failed -> a new request queues a new run
+    db.set_docset_status(docset_hash, "error", "boom")
+    client.get("/start", query_string={"docset_iri": iri})
+    assert [j["status"] for j in _jobs(db)] == ["done", "queued"]
+    assert db.get_docset(docset_hash)["status"] == "pending"
+
+
+def test_result_for_finished_and_failed_tasks(client, db, tmp_path):
     finished_hash, failed_hash = "f" * 32, "e" * 32
-    d = _write_metadata(tmp_path, finished_hash, status="finished")
-    _touch_result_files(d, finished_hash)
-    _write_metadata(tmp_path, failed_hash, status="error", error="boom")
-    app_module.save_task_mapping("uuid-finished", finished_hash)
-    app_module.save_task_mapping("uuid-failed", failed_hash)
+    _add_docset(db, finished_hash, "finished")
+    _touch_result_files(tmp_path, finished_hash)
+    _add_docset(db, failed_hash, "error", error="boom")
+    db.save_task("uuid-finished", finished_hash)
+    db.save_task("uuid-failed", failed_hash)
 
     ok = client.get("/result", query_string={"uuid": "uuid-finished"})
     assert ok.status_code == 200
@@ -94,18 +130,22 @@ def test_result_for_finished_and_failed_tasks(client, app_module, tmp_path):
     assert status.get_json()["error"] == "boom"
 
 
-def test_healthz_reports_unloaded_model(client):
-    # conftest patches model loading out, so the processor has no model
+def test_healthz_checks_the_database(client, db, monkeypatch):
+    assert client.get("/healthz").status_code == 200
+
+    monkeypatch.setattr(db.Config, "DATABASE_URL", "postgresql+psycopg://nobody@127.0.0.1:1/none")
+    db.reset_engine()
     resp = client.get("/healthz")
     assert resp.status_code == 503
     assert resp.get_json()["status"] == "unavailable"
 
 
-def test_urls_respect_proxy_prefix(client, app_module):
+def test_urls_respect_proxy_prefix(client, db, tmp_path):
     # Caddy mounts the app under /thesis and sends the prefix in X-Forwarded-Prefix
     headers = {"X-Forwarded-Prefix": "/thesis", "X-Forwarded-Proto": "https", "X-Forwarded-Host": "example.test"}
-    app_module.save_task_mapping("uuid-prefixed", "d" * 32)
-    _touch_result_files(_write_metadata(app_module.Config.DATA_DIR, "d" * 32, status="finished"), "d" * 32)
+    _add_docset(db, "d" * 32, "finished")
+    _touch_result_files(tmp_path, "d" * 32)
+    db.save_task("uuid-prefixed", "d" * 32)
 
     body = client.get("/result", query_string={"uuid": "uuid-prefixed"}, headers=headers).get_json()
     assert body["url"] == f"https://example.test/thesis/visualisations/index.html?docset={'d' * 32}"

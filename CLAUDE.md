@@ -12,8 +12,15 @@ A research paper analysis and visualization pipeline (Master's thesis project). 
 # One-time: download SPECTER2 base model + adapter into models/
 python SaveModel.py
 
-# Run the Flask server (reads .env for config)
+# Create/update the database schema (SQLite local.db unless DATABASE_URL is set)
+alembic upgrade head
+
+# Run the Flask server and, in a second terminal, the pipeline worker (both read .env)
 python app.py
+python worker.py
+
+# Tests (offline; TEST_DATABASE_URL=postgresql+psycopg://... runs them against Postgres)
+python -m pytest -q
 ```
 
 Server endpoints once running (default port 5001, see `.env`):
@@ -21,11 +28,13 @@ Server endpoints once running (default port 5001, see `.env`):
 - `http://localhost:5001/swagger/` — Swagger UI (spec served from `swagger.yaml`)
 - `http://localhost:5001/visualisations/index.html?docset=<hash>` — the D3 visualization
 
-There is no test suite, linter, or build step in this repo — there's nothing to run beyond starting the Flask app and exercising it manually or via the API.
+`docker compose up --build` runs the full stack (Postgres, migrations, web, worker) in containers.
 
 ### Async processing model
 
-Processing is kicked off via `GET /start?docset_iri=...`, which returns a `uuid` and starts a background `Thread` (see `app.py`). Poll `GET /status?uuid=...` for pipeline state, then `GET /result?uuid=...` once finished to get the visualization URL. Task UUIDs are mapped to a docset hash (MD5 of the IRI) via files in `data/tasks/`; a docset already fully processed for a given hash is reused rather than recomputed (see `has_processed_result` / metadata status checks in `app.py`).
+Processing is kicked off via `GET /start?docset_iri=...` (or `/start_openalex`), which returns a `uuid` and queues a job in the database (`Database.request_run`, called from `start_run` in `app.py`). `worker.py` claims queued jobs (`SELECT ... FOR UPDATE SKIP LOCKED`), runs them through `DocumentSetProcessor` and writes each stage to `docsets.status`, renewing the job's heartbeat meanwhile; stale jobs are requeued, and SIGTERM puts the running job back. Poll `GET /status?uuid=...` for pipeline state, then `GET /result?uuid=...` once finished to get the visualization URL. Task UUIDs are mapped to a docset hash (MD5 of the IRI or of the canonical OpenAlex query, see `DocsetHash.py`) in the `tasks` table; a docset already fully processed for a given hash is reused rather than recomputed, and at most one job per docset can be queued or running (partial unique index).
+
+Tables are defined in `Database.py` (SQLAlchemy Core) and created by Alembic migrations in `migrations/`; `DATABASE_URL` selects the database (SQLite `local.db` by default, Postgres in production). `flask --app app import-docsets` imports docsets processed before the database existed from their `metadata.json`.
 
 ### Manual/offline pipeline runs
 
@@ -39,7 +48,7 @@ Each docset (a set of papers identified by a SPARQL IRI) is hashed (MD5 of the I
 
 Pipeline orchestration flows through these modules, in order:
 
-1. **`app.py`** — Flask REST API + static file serving for `data/` and `visualisations/`. Owns the background-thread lifecycle and status polling (statuses defined in `Config.py`: `pending` → `fetching_metadata` → `computing_embeddings` → `filtering_network` → `clustering` → `reducing_dimensions` → `calculating_flow` → `finished`/`error`).
+1. **`app.py`** / **`worker.py`** — Flask REST API + static file serving for `data/` and `visualisations/`, and the worker process that runs queued jobs. Status polling reads the database (statuses defined in `Config.py`: `pending` → `fetching_metadata` → `computing_embeddings` → `filtering_network` → `clustering` → `reducing_dimensions` → `calculating_flow` → `finished`/`error`).
 2. **`DocumentSetProcessor.py`** — the orchestrator class. Loads the SPECTER2 model once at startup, holds pipeline state (`docset_df`, `topic_dict`), and delegates each stage to `Analysis.py`/`DataHandler.py`. `run_processing_steps` is the step dispatcher; each `_run_*_step` method calls into `Analysis.py` and then persists via `_save_results`.
 3. **`DataHandler.py`** — all I/O: SPARQL queries against the Fraunhofer publications ontology (fetches paper metadata + multi-valued properties like authors/orgs/journals, then collapses to one row per paper), JSON load/save for docsets and topics, and the `index.json` rebuild. Has no analysis logic.
 4. **`Analysis.py`** — the numeric pipeline stages, called in this order by the processor: `compute_embeddings` (SPECTER2 CLS-token embeddings, title+abstract joined with `[SEP]`, L2-normalized) → `filter_connected_component` (keep only papers connected via internal citations) → `run_clustering` (delegates to `TopicModeling.py`) → `run_dimensionality_reduction` (UMAP to 2D for the map) → `calculate_and_add_citation_flow` (yearly per-cluster citation stats for the alluvial/flow view).
@@ -48,7 +57,7 @@ Pipeline orchestration flows through these modules, in order:
 
 Cross-cutting notes:
 - Every stage that mutates `docset_df` merges its results back into the full dataframe via a `paper`-keyed left join (see the `update_cols`/`pd.merge` pattern in `Analysis.py`), so partial failures don't silently drop unrelated columns.
-- `DocumentSetProcessor.update_status` reads-modifies-writes `metadata.json` on every stage transition; `app.py`'s `/status` endpoint just reads that file back.
+- The worker's status callback writes each stage transition to the `docsets` table, which `/status` reads. `DocumentSetProcessor` still writes `metadata.json` (name, iri, source, query) next to the results; `index.json` is built from those files. `DocumentSetProcessor.update_status` (file-based) is only used by manual runs.
 - The SPARQL queries in `DataHandler.py` are tied to a specific Fraunhofer RDF ontology (`fhg:` prefix) — field names there are not generic and depend on that schema.
 
 ### Frontend (`visualisations/`)
@@ -71,4 +80,4 @@ The three view classes are composed into `Visualization`, not subclasses — eac
 
 ## Configuration
 
-Config is environment-driven via `.env` (loaded by `python-dotenv` in `Config.py`): `OPENROUTER_API_KEY` (required for topic naming/description LLM calls), `FLASK_PORT`, `HOST`, `DEBUG`, `SPARQL_ENDPOINT` (defaults to `http://ks2:8890/sparql`, set as a default arg in `DocumentSetProcessor.__init__`).
+Config is environment-driven via `.env` (loaded by `python-dotenv` in `Config.py`): `OPENROUTER_API_KEY` (required for topic naming/description LLM calls), `OPENALEX_API_KEY`, `DATABASE_URL`, the `WORKER_*` timings, `FLASK_PORT`, `HOST`, `DEBUG`, `SPARQL_ENDPOINT` (defaults to `http://ks2:8890/sparql`, set as a default arg in `DocumentSetProcessor.__init__`).
