@@ -7,6 +7,7 @@ from threading import Thread
 from flask import Flask, request, jsonify, url_for, send_from_directory, redirect, render_template
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from Config import Config
 from DocumentSetProcessor import DocumentSetProcessor
@@ -17,14 +18,20 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 app = Flask(__name__, template_folder='templates')
 app.config.from_object(Config)
 CORS(app)
+# Behind a reverse proxy (Caddy), trust its X-Forwarded-* headers, including the
+# path prefix the app is mounted under (e.g. /thesis), so url_for builds correct URLs.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # --- Swagger Setup ---
 # Point to the static YAML file instead of generating JSON
 SWAGGER_YAML_URL = '/swagger.yaml'
 
+# Asset and spec URLs are relative to the Swagger UI page, so they also resolve
+# when the app is mounted under a path prefix; the blueprint route itself is set
+# by url_prefix below.
 swaggerui_blueprint = get_swaggerui_blueprint(
-    app.config['SWAGGER_URL'],
-    SWAGGER_YAML_URL,
+    '.',
+    '..' + SWAGGER_YAML_URL,
     config={
         'app_name': "Docset Visualization API",
         'operationsSorter': None  # Disable sorting, use file order
@@ -199,8 +206,20 @@ def background_worker(docset_hash, docset_iri, docset_name):
 
 @app.route("/swagger.yaml")
 def serve_swagger_spec():
-    """Serves the static swagger.yaml file."""
-    return send_from_directory(os.path.abspath(os.path.dirname(__file__)), 'swagger.yaml')
+    """Serves the static swagger.yaml file, with basePath set to the proxy prefix if there is one."""
+    if not request.script_root:
+        return send_from_directory(os.path.abspath(os.path.dirname(__file__)), 'swagger.yaml')
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'swagger.yaml'), encoding='utf-8') as f:
+        spec = f.read().replace('basePath: "/"', f'basePath: "{request.script_root}"', 1)
+    return app.response_class(spec, mimetype='application/yaml')
+
+
+@app.route("/healthz")
+def healthz():
+    """Health check: 200 once the processor and the SPECTER2 model are loaded, 503 otherwise."""
+    if processor is None or processor.model is None:
+        return jsonify({"status": "unavailable", "error": "SPECTER2 model not loaded"}), 503
+    return jsonify({"status": "ok"})
 
 
 @app.route("/")
