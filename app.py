@@ -1,16 +1,15 @@
 import os
 import logging
 import socket
-import json
 import uuid
-from threading import Thread
-from flask import Flask, request, jsonify, url_for, send_from_directory, redirect, render_template
+from flask import Flask, request, jsonify, url_for, send_from_directory, render_template
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from Config import Config
-from DocumentSetProcessor import DocumentSetProcessor
+import Database
+import DocsetHash
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -39,39 +38,13 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 )
 app.register_blueprint(swaggerui_blueprint, url_prefix=app.config['SWAGGER_URL'])
 
-# --- Initialize Backend Processor ---
-try:
-    processor = DocumentSetProcessor(
-        base_model_dir="models/specter2_base_model",
-        adapter_dir="models/specter2_adapter"
-    )
-    logging.info("DocumentSetProcessor initialized successfully.")
-except Exception as e:
-    processor = None
-    logging.error(f"CRITICAL: Failed to initialize DocumentSetProcessor: {e}", exc_info=True)
+# Pipeline runs happen in the worker (worker.py): the web app only records them in the
+# database and queues a job. Status and the uuid -> docset mapping live in the database too.
 
 
 # --- Helper Functions ---
 def get_data_dir():
     return Config.DATA_DIR if hasattr(Config, 'DATA_DIR') else 'data'
-
-
-def get_metadata_path(docset_hash):
-    """Returns the path to the metadata.json file for a given hash."""
-    return os.path.join(get_data_dir(), docset_hash, "metadata.json")
-
-
-def read_metadata(docset_hash):
-    """Reads the metadata.json file for a given hash."""
-    metadata_path = get_metadata_path(docset_hash)
-    if not os.path.exists(metadata_path):
-        return None
-    try:
-        with open(metadata_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        logging.error(f"Failed to read metadata for {docset_hash}: {e}")
-        return None
 
 
 def has_processed_result(docset_hash):
@@ -82,124 +55,32 @@ def has_processed_result(docset_hash):
     return os.path.exists(docset_file) and os.path.exists(topics_file)
 
 
-# --- UUID Mapping Helpers ---
-def get_tasks_dir():
-    """Returns the directory where task mappings are stored."""
-    tasks_dir = os.path.join(get_data_dir(), 'tasks')
-    os.makedirs(tasks_dir, exist_ok=True)
-    return tasks_dir
-
-
-def save_task_mapping(task_uuid, docset_hash):
-    """Saves a mapping from UUID to Docset Hash."""
-    mapping_path = os.path.join(get_tasks_dir(), f"{task_uuid}.json")
-    try:
-        with open(mapping_path, 'w', encoding='utf-8') as f:
-            json.dump({"docset_hash": docset_hash}, f)
-    except Exception as e:
-        logging.error(f"Failed to save task mapping for {task_uuid}: {e}")
-
-
-def get_hash_from_uuid(task_uuid):
-    """Retrieves the Docset Hash associated with a UUID."""
-    mapping_path = os.path.join(get_tasks_dir(), f"{task_uuid}.json")
-    if not os.path.exists(mapping_path):
-        return None
-    try:
-        with open(mapping_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data.get("docset_hash")
-    except Exception as e:
-        logging.error(f"Failed to read task mapping for {task_uuid}: {e}")
-        return None
-
-
-# --- Background Worker ---
-def background_worker_openalex(docset_hash, search, raw_filter, docset_name, min_size, max_size):
+def start_run(docset_hash, kind, params, name, source, iri=None, query=None):
     """
-    Background task to process a document set sourced from an OpenAlex search+filter query.
+    Returns a new task uuid for the docset, queuing a pipeline run unless the docset
+    is already processed or a run for it is queued or in progress.
     """
-    try:
-        if not processor:
-            raise Exception("DocumentSetProcessor is not initialized.")
-
-        logging.info(
-            f"Task for {docset_hash}: Starting OpenAlex processing "
-            f"(search={search!r}, filter={raw_filter!r})"
-        )
-
-        def update_status(new_status):
-            processor.update_status(new_status)
-            logging.info(f"Docset {docset_hash} status updated to: {new_status}")
-
-        processor.docset_hash = docset_hash
-        processor.docset_dir = os.path.join(processor.data_root, docset_hash)
-        processor.metadata_path = os.path.join(processor.docset_dir, "metadata.json")
-        processor.update_status(Config.STATUS_RUNNING)
-
-        processor.process_from_openalex_query(
-            search=search,
-            raw_filter=raw_filter,
-            docset_name=docset_name,
-            status_callback=update_status,
-            min_size=min_size,
-            max_size=max_size,
-        )
-
-        logging.info(f"Docset {docset_hash}: Processing complete.")
-        processor.update_status(Config.STATUS_FINISHED[0])
-
-    except Exception as e:
-        logging.error(f"Docset {docset_hash}: Failed with error: {e}", exc_info=True)
-        if not processor.metadata_path:
-            processor.docset_hash = docset_hash
-            processor.docset_dir = os.path.join(processor.data_root, docset_hash)
-            processor.metadata_path = os.path.join(processor.docset_dir, "metadata.json")
-        processor.update_status(Config.STATUS_ERROR[0], str(e))
+    task_uuid = str(uuid.uuid4())
+    existing = Database.get_docset(docset_hash)
+    if existing and existing["status"] in Config.STATUS_FINISHED and has_processed_result(docset_hash):
+        logging.info(f"Docset {docset_hash} already processed. Reusing existing result.")
+    elif Database.request_run(docset_hash, kind, params, name=name, source=source, iri=iri, query=query) is None:
+        logging.info(f"Docset {docset_hash} already queued or in progress. Reusing existing task state.")
+    else:
+        logging.info(f"Docset {docset_hash}: queued a {kind} run.")
+    Database.save_task(task_uuid, docset_hash)
+    return task_uuid
 
 
-def background_worker(docset_hash, docset_iri, docset_name):
-    """
-    Background task to process the document set.
-    """
-    try:
-        if not processor:
-            raise Exception("DocumentSetProcessor is not initialized.")
-
-        logging.info(f"Task for {docset_hash}: Starting processing for {docset_name} ({docset_iri})")
-
-        # Define callback to update status
-        def update_status(new_status):
-            processor.update_status(new_status)
-            logging.info(f"Docset {docset_hash} status updated to: {new_status}")
-
-        # Update status to running
-        processor.docset_hash = docset_hash
-        processor.docset_dir = os.path.join(processor.data_root, docset_hash)
-        processor.metadata_path = os.path.join(processor.docset_dir, "metadata.json")
-        processor.update_status(Config.STATUS_RUNNING)
-
-        # This method now handles hashing and saving metadata internally
-        processor.process_from_iri(
-            docset_iri=docset_iri,
-            docset_name=docset_name,
-            status_callback=update_status
-        )
-
-        logging.info(f"Docset {docset_hash}: Processing complete.")
-
-        # Update status to finished
-        processor.update_status(Config.STATUS_FINISHED[0])  # "finished"
-
-    except Exception as e:
-        logging.error(f"Docset {docset_hash}: Failed with error: {e}", exc_info=True)
-        # We need to manually set the paths if processor wasn't fully initialized or if it failed early
-        if not processor.metadata_path:
-            processor.docset_hash = docset_hash
-            processor.docset_dir = os.path.join(processor.data_root, docset_hash)
-            processor.metadata_path = os.path.join(processor.docset_dir, "metadata.json")
-
-        processor.update_status(Config.STATUS_ERROR[0], str(e))  # "error"
+def resolve_task(task_uuid):
+    """Returns (docset, error_response) for a task uuid."""
+    docset_hash = Database.get_task_docset_hash(task_uuid)
+    if not docset_hash:
+        return None, (jsonify({"error": "Unknown uuid"}), 404)
+    docset = Database.get_docset(docset_hash)
+    if not docset:
+        return None, (jsonify({"error": "Metadata not found for this task"}), 404)
+    return docset, None
 
 
 # --- API Routes ---
@@ -216,9 +97,9 @@ def serve_swagger_spec():
 
 @app.route("/healthz")
 def healthz():
-    """Health check: 200 once the processor and the SPECTER2 model are loaded, 503 otherwise."""
-    if processor is None or processor.model is None:
-        return jsonify({"status": "unavailable", "error": "SPECTER2 model not loaded"}), 503
+    """Health check: 200 while the database is reachable, 503 otherwise. (The worker has its own check.)"""
+    if not Database.ping():
+        return jsonify({"status": "unavailable", "error": "database not reachable"}), 503
     return jsonify({"status": "ok"})
 
 
@@ -238,54 +119,11 @@ def start():
     if not docset_iri:
         return jsonify({"error": "Missing required parameter: docset_iri"}), 400
 
-    # Use the IRI as the name since the option to provide a name is removed
-    docset_name = docset_iri
-
-    # 1. Generate UUID for this specific request
-    task_uuid = str(uuid.uuid4())
-
-    # 2. Calculate hash for the document set
-    docset_hash = DocumentSetProcessor.hash_iri(docset_iri)
-
-    # 3. Save the mapping (UUID -> Hash)
-    save_task_mapping(task_uuid, docset_hash)
-
-    # 4. Reuse an existing task/result for this hash when possible.
-    existing_metadata = read_metadata(docset_hash)
-    if existing_metadata:
-        existing_status = existing_metadata.get("status")
-        existing_iri = existing_metadata.get("iri")
-        iri_matches_hash = not existing_iri or existing_iri == docset_iri
-
-        if iri_matches_hash:
-            if existing_status in Config.STATUS_FINISHED and has_processed_result(docset_hash):
-                logging.info(f"Docset {docset_hash} already processed. Reusing existing result.")
-                return jsonify({"uuid": task_uuid}), 202
-
-            if existing_status and existing_status not in Config.STATUS_ERROR:
-                logging.info(
-                    f"Docset {docset_hash} already in progress (status={existing_status}). Reusing existing task state.")
-                return jsonify({"uuid": task_uuid}), 202
-
-    # 5. Initialize metadata file for a new/restarted run
-    metadata_path = get_metadata_path(docset_hash)
-    os.makedirs(os.path.dirname(metadata_path), exist_ok=True)
-
-    initial_metadata = {
-        "name": docset_name,
-        "iri": docset_iri,
-        "hash": docset_hash,
-        "status": Config.STATUS_PENDING
-    }
-
-    with open(metadata_path, 'w', encoding='utf-8') as f:
-        json.dump(initial_metadata, f, indent=2)
-
-    # 6. Start the worker (using the hash)
-    thread = Thread(target=background_worker, args=(docset_hash, docset_iri, docset_name))
-    thread.start()
-
-    # 7. Return the UUID
+    task_uuid = start_run(
+        DocsetHash.hash_iri(docset_iri), "iri", {"docset_iri": docset_iri},
+        # Use the IRI as the name; the worker replaces it with the name from SPARQL if there is one
+        name=docset_iri, source="fraunhofer", iri=docset_iri,
+    )
     return jsonify({"uuid": task_uuid}), 202
 
 
@@ -306,53 +144,13 @@ def start_openalex():
     if not search and not raw_filter:
         return jsonify({"error": "At least one of 'search' or 'filter' is required."}), 400
 
-    # 1. Generate UUID for this specific request
-    task_uuid = str(uuid.uuid4())
-
-    # 2. Calculate hash for this query
-    docset_hash = DocumentSetProcessor.hash_query(search=search, raw_filter=raw_filter)
-
-    # 3. Save the mapping (UUID -> Hash)
-    save_task_mapping(task_uuid, docset_hash)
-
-    # 4. Reuse an existing task/result for this hash when possible.
-    existing_metadata = read_metadata(docset_hash)
-    if existing_metadata:
-        existing_status = existing_metadata.get("status")
-
-        if existing_status in Config.STATUS_FINISHED and has_processed_result(docset_hash):
-            logging.info(f"Docset {docset_hash} already processed. Reusing existing result.")
-            return jsonify({"uuid": task_uuid}), 202
-
-        if existing_status and existing_status not in Config.STATUS_ERROR:
-            logging.info(
-                f"Docset {docset_hash} already in progress (status={existing_status}). Reusing existing task state.")
-            return jsonify({"uuid": task_uuid}), 202
-
-    # 5. Initialize metadata file for a new/restarted run
-    metadata_path = get_metadata_path(docset_hash)
-    os.makedirs(os.path.dirname(metadata_path), exist_ok=True)
-
-    initial_metadata = {
-        "name": docset_name or search or raw_filter,
-        "iri": None,
-        "hash": docset_hash,
-        "source": "openalex",
-        "query": {"search": search, "filters": None, "raw_filter": raw_filter},
-        "status": Config.STATUS_PENDING
-    }
-
-    with open(metadata_path, 'w', encoding='utf-8') as f:
-        json.dump(initial_metadata, f, indent=2)
-
-    # 6. Start the worker (using the hash)
-    thread = Thread(
-        target=background_worker_openalex,
-        args=(docset_hash, search, raw_filter, docset_name, min_size, max_size)
+    task_uuid = start_run(
+        DocsetHash.hash_query(search=search, raw_filter=raw_filter), "openalex",
+        {"search": search, "raw_filter": raw_filter, "docset_name": docset_name,
+         "min_size": min_size, "max_size": max_size},
+        name=docset_name or search or raw_filter, source="openalex",
+        query={"search": search, "filters": None, "raw_filter": raw_filter},
     )
-    thread.start()
-
-    # 7. Return the UUID
     return jsonify({"uuid": task_uuid}), 202
 
 
@@ -365,22 +163,13 @@ def status():
     if not task_uuid:
         return jsonify({"error": "Missing uuid parameter"}), 400
 
-    # 1. Resolve UUID to Hash
-    docset_hash = get_hash_from_uuid(task_uuid)
-    if not docset_hash:
-        return jsonify({"error": "Unknown uuid"}), 404
+    docset, error_response = resolve_task(task_uuid)
+    if error_response:
+        return error_response
 
-    # 2. Read metadata using Hash
-    metadata = read_metadata(docset_hash)
-    if not metadata:
-        return jsonify({"error": "Metadata not found for this task"}), 404
-
-    response = {
-        "uuid": task_uuid,
-        "status": metadata.get("status", "unknown")
-    }
-    if metadata.get("error"):
-        response["error"] = metadata["error"]
+    response = {"uuid": task_uuid, "status": docset["status"]}
+    if docset.get("error"):
+        response["error"] = docset["error"]
     return jsonify(response)
 
 
@@ -393,21 +182,15 @@ def result():
     if not task_uuid:
         return jsonify({"error": "Missing uuid parameter"}), 400
 
-    # 1. Resolve UUID to Hash
-    docset_hash = get_hash_from_uuid(task_uuid)
-    if not docset_hash:
-        return jsonify({"error": "Unknown uuid"}), 404
+    docset, error_response = resolve_task(task_uuid)
+    if error_response:
+        return error_response
 
-    # 2. Read metadata using Hash
-    metadata = read_metadata(docset_hash)
-    if not metadata:
-        return jsonify({"error": "Metadata not found for this task"}), 404
-
-    status = metadata.get("status")
+    status = docset["status"]
 
     if status in Config.STATUS_FINISHED:
         # Construct the URL to the visualization
-        viz_url = url_for('serve_visualisation_page', _external=True) + f"?docset={docset_hash}"
+        viz_url = url_for('serve_visualisation_page', _external=True) + f"?docset={docset['hash']}"
 
         return jsonify({
             "uuid": task_uuid,
@@ -419,7 +202,7 @@ def result():
         return jsonify({
             "uuid": task_uuid,
             "status": status,
-            "error": metadata.get("error")
+            "error": docset.get("error")
         }), 500
 
     return jsonify({
@@ -427,6 +210,12 @@ def result():
         "status": status,
         "message": "Process still in progress"
     }), 202
+
+
+@app.cli.command("import-docsets")
+def import_docsets():
+    """Imports docsets processed before the database existed (data/<hash>/metadata.json)."""
+    print(f"Imported {Database.import_file_metadata(get_data_dir())} docset(s).")
 
 
 # --- Static File Serving ---
