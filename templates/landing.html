@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finding the Needle in a Haystack: science in the news, mapped</title>
+    <meta name="description" content="Every week, three research advances from the news, each with an interactive map of the research field around it.">
+    <style>
+        :root {
+            --ink: #16181d;
+            --ink-2: #4a4f59;
+            --muted: #6f747d;
+            --line: #e3e5e8;
+            --plane: #f6f7f9;
+            --surface: #ffffff;
+            --accent: #1c5cab;
+            --accent-2: #5598e7;
+            --accent-wash: #eef4fc;
+            --radius: 10px;
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--plane); line-height: 1.55; }
+        a { color: var(--accent); }
+        a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+        /* header */
+        .site-header { background: var(--surface); border-bottom: 1px solid var(--line); }
+        .site-header .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+        .brand { font-weight: 600; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
+        .brand span { color: var(--muted); font-weight: 400; }
+        .site-header nav a { color: var(--ink-2); text-decoration: none; margin-left: 24px; font-size: 15px; }
+        .site-header nav a:hover { color: var(--accent); }
+
+        /* intro */
+        .intro { padding: 56px 0 32px; }
+        .kicker { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+        .intro h1 { font-size: clamp(32px, 4.4vw, 48px); line-height: 1.12; letter-spacing: -0.02em; font-weight: 650; margin: 0 0 16px; max-width: 18ch; }
+        .intro p { font-size: 18px; color: var(--ink-2); max-width: 62ch; margin: 0; }
+
+        /* topics */
+        .topic { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin: 0 0 28px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); overflow: hidden; }
+        .topic-text { padding: 32px 36px 32px; }
+        .topic-field { padding: 32px 32px; background: #fbfcfd; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 22px; }
+        .topic-number { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; margin: 0 0 6px; }
+        .topic h2 { font-size: 27px; line-height: 1.2; letter-spacing: -0.015em; font-weight: 650; margin: 0 0 14px; }
+        .lead { font-size: 17px; margin: 0 0 22px; }
+        .why h3, .topic-field h3 { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+        .why p { margin: 0 0 14px; color: var(--ink-2); }
+        .sources { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: 14px; }
+        .sources li { display: flex; gap: 8px; }
+        .outlet { color: var(--muted); white-space: nowrap; }
+        .sources a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+        .sources a:hover { color: var(--accent); border-color: var(--accent); }
+
+        .study { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 14px 16px; font-size: 14px; }
+        .study a { color: var(--ink); font-weight: 600; text-decoration: none; }
+        .study a:hover { color: var(--accent); }
+        .study .meta { color: var(--muted); margin-top: 4px; }
+
+        .figure-row { display: flex; align-items: baseline; gap: 10px; }
+        .figure { font-size: 34px; font-weight: 650; letter-spacing: -0.02em; }
+        .figure-label { color: var(--ink-2); font-size: 14px; }
+        .chart { position: relative; margin-top: 10px; }
+        .chart svg { display: block; overflow: visible; }
+        .chart .axis { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+        .chart .baseline { stroke: var(--line); stroke-width: 1; }
+        .chart .hit { fill: transparent; cursor: default; }
+        .chart .bar { pointer-events: none; }
+        .chart .hit:hover + .bar, .chart .hit:focus + .bar { opacity: 0.8; }
+        .tooltip { position: absolute; pointer-events: none; background: var(--ink); color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px; white-space: nowrap; transform: translate(-50%, -100%); opacity: 0; transition: opacity 0.1s; font-variant-numeric: tabular-nums; }
+        .tooltip.visible { opacity: 1; }
+        details.as-table { font-size: 13px; color: var(--muted); margin-top: 6px; }
+        details.as-table summary { cursor: pointer; }
+        details.as-table table { border-collapse: collapse; margin-top: 6px; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+        details.as-table td, details.as-table th { padding: 2px 14px 2px 0; text-align: right; font-weight: normal; }
+        details.as-table th { color: var(--muted); }
+
+        .directions { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+        .directions li { display: grid; grid-template-columns: 10px 1fr; column-gap: 10px; font-size: 14px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; background: var(--muted); }
+        .directions strong { font-weight: 600; }
+        .directions .count { color: var(--muted); font-variant-numeric: tabular-nums; }
+        .directions .summary { grid-column: 2; color: var(--ink-2); }
+
+        .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; }
+        .button { display: inline-block; text-decoration: none; font-weight: 600; font-size: 15px; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--accent); }
+        .button.primary { background: var(--accent); color: #fff; }
+        .button.primary:hover { background: #164a8a; }
+        .button.secondary { background: var(--surface); color: var(--accent); }
+        .button.secondary:hover { background: var(--accent-wash); }
+
+        .empty { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 40px; color: var(--ink-2); }
+
+        /* about */
+        .about { padding: 24px 0 64px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+        .about h2 { font-size: 16px; margin: 0 0 8px; }
+        .about p { margin: 0; color: var(--ink-2); font-size: 15px; }
+        footer { border-top: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--muted); }
+        footer .wrap { padding: 20px 24px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+        footer a { color: var(--ink-2); }
+
+        @media (max-width: 860px) {
+            .topic { grid-template-columns: 1fr; }
+            .topic-field { border-left: 0; border-top: 1px solid var(--line); }
+            .topic-text, .topic-field { padding: 24px 22px; }
+            .about { grid-template-columns: 1fr; }
+            .site-header nav a { margin-left: 16px; font-size: 14px; }
+            .brand span, .site-header nav a[href="#how"] { display: none; }
+        }
+    </style>
+</head>
+<body>
+<header class="site-header">
+    <div class="wrap">
+        <a class="brand" href="./">Finding the Needle <span>in a Haystack</span></a>
+        <nav>
+            <a href="#how">How it works</a>
+            <a href="new">All document sets</a>
+        </nav>
+    </div>
+</header>
+
+<main class="wrap">
+    <section class="intro">
+        <p class="kicker">{% if page %}The week of {{ week_dates }}{% else %}Science in the news{% endif %}</p>
+        <h1>Science in the news, mapped</h1>
+        <p>Every week we pick research advances that are in the news, find the study behind them and map the research
+            field around it: its main lines of work, its key papers, and where the new result fits.</p>
+    </section>
+
+    {% if page and page.topics %}
+    {% for topic in page.topics %}
+    {% set chart = works_chart(topic.counts) %}
+    <article class="topic" id="topic-{{ loop.index }}" aria-labelledby="topic-{{ loop.index }}-title">
+        <div class="topic-text">
+            <p class="topic-number">{{ loop.index }} of {{ page.topics|length }} · {{ topic.field }}</p>
+            <h2 id="topic-{{ loop.index }}-title">{{ topic.headline }}</h2>
+            <p class="lead">{{ topic.lead }}</p>
+            <div class="why">
+                <h3>Why now</h3>
+                <p>{{ topic.why_now }}</p>
+                {% if topic.sources %}
+                <ul class="sources">
+                    {% for s in topic.sources %}
+                    <li><span class="outlet">{{ s.outlet }}</span><a href="{{ s.url }}" rel="noopener" target="_blank">{{ s.title }}</a></li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="topic-field">
+            {% if topic.paper %}
+            <div>
+                <h3>The study</h3>
+                <div class="study">
+                    <a href="{{ topic.paper.doi or topic.paper.id }}" rel="noopener" target="_blank">{{ topic.paper.title }}</a>
+                    <div class="meta">{{ topic.paper.journal or 'Journal unknown' }}{% if topic.paper.publication_date %} · {{ topic.paper.publication_date }}{% endif %}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div>
+                <h3>The field</h3>
+                <div class="figure-row">
+                    <span class="figure">{{ "{:,}".format(topic.papers) }}</span>
+                    <span class="figure-label">connected papers on the map</span>
+                </div>
+                {% if chart %}
+                <div class="chart" data-chart>
+                    <svg width="100%" viewBox="0 -4 {{ chart.width }} {{ chart.height + 22 }}" role="img"
+                         aria-label="Works per year in the field, {{ chart.first }} to {{ chart.last }}{% if chart.bars[-1].partial %} ({{ chart.last }} so far){% endif %}">
+                        {% for b in chart.bars %}
+                        <rect class="hit" x="{{ b.band_x }}" y="0" width="{{ b.band_w }}" height="{{ chart.height }}"
+                              tabindex="0" data-label="{{ b.year }}{% if b.partial %} so far{% endif %}: {{ '{:,}'.format(b.count) }} works"
+                              aria-label="{{ b.year }}{% if b.partial %} so far{% endif %}: {{ b.count }} works"></rect>
+                        <path class="bar" fill="{{ '#5598e7' if b.partial else '#1c5cab' }}"
+                              d="M{{ b.x }},{{ chart.height }} V{{ b.y + [4, b.h]|min }} q0,-{{ [4, b.h]|min }} {{ [4, b.h]|min }},-{{ [4, b.h]|min }} H{{ b.x + b.w - [4, b.h]|min }} q{{ [4, b.h]|min }},0 {{ [4, b.h]|min }},{{ [4, b.h]|min }} V{{ chart.height }} Z"></path>
+                        {% endfor %}
+                        <line class="baseline" x1="0" x2="{{ chart.width }}" y1="{{ chart.height }}" y2="{{ chart.height }}"></line>
+                        <text class="axis" x="{{ chart.bars[0].x }}" y="{{ chart.height + 16 }}">{{ chart.first }}</text>
+                        <text class="axis" x="{{ chart.bars[-1].x + chart.bars[-1].w }}" y="{{ chart.height + 16 }}" text-anchor="end">{{ chart.last }}{% if chart.bars[-1].partial %} so far{% endif %}</text>
+                    </svg>
+                    <div class="tooltip" role="presentation"></div>
+                </div>
+                <details class="as-table">
+                    <summary>Works per year as a table</summary>
+                    <table>
+                        <tr><th>Year</th><th>Works</th></tr>
+                        {% for b in chart.bars %}<tr><td>{{ b.year }}{% if b.partial %} (so far){% endif %}</td><td>{{ '{:,}'.format(b.count) }}</td></tr>{% endfor %}
+                    </table>
+                </details>
+                {% endif %}
+            </div>
+
+            {% if topic.directions %}
+            <div>
+                <h3>Main lines of research</h3>
+                <ul class="directions">
+                    {% for d in topic.directions %}
+                    <li>
+                        <span class="dot" {% if d.color %}style="background: {{ d.color }}"{% endif %}></span>
+                        <span><strong>{{ d.name }}</strong> <span class="count">· {{ d.papers }} papers</span></span>
+                        {% if d.summary %}<span class="summary">{{ d.summary }}</span>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="actions">
+                <a class="button primary" href="visualisations/index.html?docset={{ topic.docset }}">Explore the topic landscape</a>
+                <a class="button secondary" href="visualisations/index.html?docset={{ topic.docset }}&amp;view=citation-network">Citation network</a>
+            </div>
+        </div>
+    </article>
+    {% endfor %}
+    {% else %}
+    <div class="empty">This week's topics are being prepared. Meanwhile, <a href="new">explore the document sets</a> that are already mapped.</div>
+    {% endif %}
+
+    <section class="about" id="how">
+        <div>
+            <h2>Picked from the news</h2>
+            <p>Headlines from science news, Hacker News and Mastodon are collected through the week. Claude groups
+                them into research topics and ranks them by how widely they are covered and how much they are looked up.</p>
+        </div>
+        <div>
+            <h2>From the study to the field</h2>
+            <p>For each topic Claude finds the study behind the coverage and designs an OpenAlex search for the field
+                around it, testing it against OpenAlex until the set is on topic and contains the study.</p>
+        </div>
+        <div>
+            <h2>Mapped by the pipeline</h2>
+            <p>The papers are embedded with SPECTER2 and clustered into a hierarchy of topics, and their citations are
+                traced over time: the topic landscape and the citation network.</p>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="wrap">
+        <span>Paper data: <a href="https://openalex.org/" rel="noopener">OpenAlex</a> (CC0). Headlines belong to the outlets named, linked to the original.</span>
+        <span><a href="https://github.com/jan-c-buchkremer/master-thesis" rel="noopener">Source code</a> · <a href="swagger/">API</a></span>
+    </div>
+</footer>
+
+<script>
+    // hover and keyboard focus show a column's year and count
+    document.querySelectorAll('[data-chart]').forEach(chart => {
+        const tip = chart.querySelector('.tooltip');
+        const svg = chart.querySelector('svg');
+        const show = hit => {
+            const box = hit.getBoundingClientRect(), outer = chart.getBoundingClientRect();
+            tip.textContent = hit.dataset.label;
+            tip.style.left = `${box.left - outer.left + box.width / 2}px`;
+            tip.style.top = `${box.top - outer.top - 4}px`;
+            tip.classList.add('visible');
+        };
+        svg.querySelectorAll('.hit').forEach(hit => {
+            hit.addEventListener('mouseenter', () => show(hit));
+            hit.addEventListener('focus', () => show(hit));
+            hit.addEventListener('mouseleave', () => tip.classList.remove('visible'));
+            hit.addEventListener('blur', () => tip.classList.remove('visible'));
+        });
+    });
+</script>
+</body>
+</html>

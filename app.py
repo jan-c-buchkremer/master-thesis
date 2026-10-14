@@ -1,8 +1,10 @@
+import datetime as dt
+import json
 import os
 import logging
 import socket
 import uuid
-from flask import Flask, request, jsonify, url_for, send_from_directory, render_template
+from flask import Flask, abort, request, jsonify, url_for, send_from_directory, render_template
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -55,6 +57,50 @@ def has_processed_result(docset_hash):
     return os.path.exists(docset_file) and os.path.exists(topics_file)
 
 
+def load_featured():
+    """The topics of the week shown on the landing page (written by `python -m trends write`), or None."""
+    path = os.path.join(get_data_dir(), 'featured', 'current.json')
+    try:
+        with open(path, encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, ValueError):
+        return None
+
+
+def week_dates(week):
+    """'2026-W42' -> '12 to 18 October 2026'."""
+    try:
+        year, number = week.split('-W')
+        monday = dt.date.fromisocalendar(int(year), int(number), 1)
+    except (ValueError, AttributeError):
+        return week
+    sunday = monday + dt.timedelta(days=6)
+    start = f"{monday.day}" if monday.month == sunday.month else f"{monday.day} {monday:%B}"
+    return f"{start} to {sunday.day} {sunday:%B %Y}"
+
+
+def works_chart(counts, width=280, height=72, bar_max=18, gap=2):
+    """
+    Geometry of a topic's works-per-year column chart (drawn as inline SVG by landing.html): one column per year,
+    the current year marked as incomplete.
+    """
+    years = sorted(int(y) for y in counts)
+    if not years:
+        return None
+    this_year = dt.date.today().year
+    peak = max(counts[str(y)] for y in years) or 1
+    band = width / len(years)
+    bar = min(bar_max, band - gap)
+    bars = []
+    for i, year in enumerate(years):
+        n = counts[str(year)]
+        h = max(round(n / peak * height), 1 if n else 0)
+        bars.append({"year": year, "count": n, "x": round(i * band + (band - bar) / 2, 1), "w": round(bar, 1),
+                     "h": h, "y": height - h, "band_x": round(i * band, 1), "band_w": round(band, 1),
+                     "partial": year == this_year})
+    return {"width": width, "height": height, "bars": bars, "first": years[0], "last": years[-1]}
+
+
 def start_run(docset_hash, kind, params, name, source, iri=None, query=None):
     """
     Returns a new task uuid for the docset, queuing a pipeline run unless the docset
@@ -104,8 +150,16 @@ def healthz():
 
 
 @app.route("/")
+def landing():
+    """The landing page: the topics of the week, each with its topic landscape and citation network."""
+    page = load_featured()
+    return render_template('landing.html', page=page, week_dates=week_dates(page['week']) if page else None,
+                           works_chart=works_chart)
+
+
+@app.route("/new")
 def home():
-    """Renders the main startup page."""
+    """All processed docsets, and the form for a new one."""
     return render_template('home.html')
 
 
@@ -235,6 +289,8 @@ def serve_visualisation_files(path):
 @app.route('/data/<path:path>')
 def serve_data_files(path):
     """Serves the processed data files required by the visualisation."""
+    if os.path.normpath(path).split(os.sep)[0] == 'trends':
+        abort(404)  # the weekly run's working files (trends/): collected headlines, candidates
     return send_from_directory(Config.DATA_DIR if hasattr(Config, 'DATA_DIR') else 'data', path)
 
 

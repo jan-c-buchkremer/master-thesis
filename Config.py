@@ -44,6 +44,18 @@ class Config:
     DOCSET_MIN_SIZE = int(os.getenv('DOCSET_MIN_SIZE', 500))
     DOCSET_MAX_SIZE = int(os.getenv('DOCSET_MAX_SIZE', 5000))
 
+    # LLM calls go through headless Claude Code on the Claude subscription (ClaudeCode.py); model aliases
+    # follow the newest model of each family. Cluster names and descriptions: many short calls per run.
+    CLUSTER_LLM_MODEL = os.getenv('CLUSTER_LLM_MODEL', 'haiku')
+
+    # Topics of the week (trends/): the model that picks topics, researches them and writes their
+    # introductions, and the size range of each topic's docset (its query is refined until it fits)
+    TRENDS_LLM_MODEL = os.getenv('TRENDS_LLM_MODEL', 'sonnet')
+    TRENDS_TOPICS = int(os.getenv('TRENDS_TOPICS', 3))
+    TRENDS_DOCSET_MIN_SIZE = int(os.getenv('TRENDS_DOCSET_MIN_SIZE', 200))
+    TRENDS_DOCSET_MAX_SIZE = int(os.getenv('TRENDS_DOCSET_MAX_SIZE', 2000))
+    TRENDS_WAIT_HOURS = float(os.getenv('TRENDS_WAIT_HOURS', 8))
+
     # Topic Modeling Settings
     TOPIC_MAX_LEAF_SIZE = int(os.getenv('TOPIC_MAX_LEAF_SIZE', 150))
     TOPIC_MIN_TOPIC_SIZE = int(os.getenv('TOPIC_MIN_TOPIC_SIZE', 15))

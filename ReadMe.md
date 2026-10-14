@@ -67,9 +67,6 @@ The interface is driven by dynamic queries, allowing users to filter the corpus 
 Create a `.env` file in the root directory. You will need API keys for the various services used.
 
 ```env
-# API Keys for LLM Service
-OPENROUTER_API_KEY=your_openrouter_key
-
 # API Key for OpenAlex (free account at openalex.org -> openalex.org/settings/api)
 OPENALEX_API_KEY=your_openalex_key
 
@@ -77,6 +74,10 @@ OPENALEX_API_KEY=your_openalex_key
 FLASK_PORT=5001
 
 ```
+
+Cluster names and descriptions are written by Claude through the [Claude Code](https://claude.com/claude-code) CLI
+(`claude -p`) on a Claude subscription, so install Claude Code and log in once with `claude`. In a container, set
+`CLAUDE_CODE_OAUTH_TOKEN` to a token from `claude setup-token` instead (the image has the CLI).
 
 ### 2. Download Models
 Before running the pipeline, ensure the SPECTER2 models are downloaded locally.
