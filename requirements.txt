@@ -30,7 +30,9 @@ umap-learn==0.5.8
 hdbscan==0.8.40
 scikit-learn==1.7.2
 nltk==3.9.2
-openai==2.7.1
 
 # Colour assignment for topics (TopicDictionary.py)
 matplotlib==3.10.7
+
+# Topics of the week: science news feeds (trends/sources.py)
+feedparser==6.0.14

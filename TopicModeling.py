@@ -1,5 +1,4 @@
 import json
-import os
 import re
 from collections import defaultdict, deque
 from typing import Dict, List, Optional, Tuple
@@ -15,7 +14,8 @@ from sklearn.metrics import silhouette_score
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
 from dotenv import load_dotenv
-from openai import OpenAI
+import ClaudeCode
+from Config import Config
 from TopicDictionary import TopicDictionary
 
 # Configure logging
@@ -27,7 +27,6 @@ for lib in ["groq", "httpx", "httpcore", "httpcore.http11", "skimage"]:
     logging.getLogger(lib).setLevel(logging.ERROR)
 
 load_dotenv()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 
 def _df_to_docset(df: pd.DataFrame, local_cluster_col: str = None) -> List[Dict]:
@@ -44,13 +43,9 @@ def _df_to_docset(df: pd.DataFrame, local_cluster_col: str = None) -> List[Dict]
 
 
 class LDATopicExtractor:
-    def __init__(self, api_key: str):
-        if not api_key:
-            raise ValueError("OpenRouter API key is required.")
-        self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key
-        )
+    def __init__(self):
+        # cluster names and descriptions come from Claude via headless Claude Code (ClaudeCode.py)
+        self.model = Config.CLUSTER_LLM_MODEL
         self.lemmatizer = WordNetLemmatizer()
         self.tokenizer = RegexpTokenizer(r'\w+')
 
@@ -132,13 +127,7 @@ class LDATopicExtractor:
             f"Focus on the new, specific information. Write in academic style."
         )
         try:
-            response = self.client.chat.completions.create(
-                model='mistralai/mistral-small-3.2-24b-instruct',
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,
-                max_tokens=200
-            )
-            return response.choices[0].message.content.strip()
+            return ClaudeCode.ask_text(prompt + " Only return the description, nothing else.", self.model)
         except Exception as e:
             logger.error(f"LLM description generation failed: {e}")
             return "Description unavailable."
@@ -162,13 +151,7 @@ class LDATopicExtractor:
             f"Only return the name (max 5 words), nothing else."
         )
         try:
-            response = self.client.chat.completions.create(
-                model='mistralai/mistral-small-3.2-24b-instruct',
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.4,
-                max_tokens=30
-            )
-            name = _clean_llm_name(response.choices[0].message.content)
+            name = _clean_llm_name(ClaudeCode.ask_text(prompt, self.model))
             return name if name else "Unnamed Cluster"
         except Exception as e:
             logger.error(f"LLM naming failed: {e}")
@@ -309,13 +292,8 @@ def deduplicate_topic_names(topic_dict: "TopicDictionary", extractor: "LDATopicE
             f"Respond with exactly {len(group)} lines, one new name per line, in the same order, nothing else."
         )
         try:
-            response = extractor.client.chat.completions.create(
-                model='mistralai/mistral-small-3.2-24b-instruct',
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.4,
-                max_tokens=100,
-            )
-            raw_lines = [line for line in response.choices[0].message.content.strip().splitlines() if line.strip()]
+            answer = ClaudeCode.ask_text(prompt, extractor.model)
+            raw_lines = [line for line in answer.splitlines() if line.strip()]
             if len(raw_lines) != len(group):
                 logger.warning(f"Dedup rename count mismatch for group {group}: got {len(raw_lines)} lines")
             else:
@@ -340,7 +318,7 @@ def run_clustering(
 ) -> Tuple[pd.DataFrame, TopicDictionary]:
     topic_dict = TopicDictionary()
     quality_metrics = ClusterQualityMetrics()
-    topic_extractor = LDATopicExtractor(api_key=OPENROUTER_API_KEY) if enable_topic_modeling else None
+    topic_extractor = LDATopicExtractor() if enable_topic_modeling else None
 
     def _generate_cluster_info(df, indices, labels, reduced_embeddings, extractor, depth, parent_description):
         cluster_texts_map = defaultdict(list)

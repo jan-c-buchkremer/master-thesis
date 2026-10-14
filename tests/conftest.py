@@ -15,7 +15,6 @@ import sys
 import pytest
 
 # --- Dummy environment (must precede any project import) ---
-os.environ.setdefault("OPENROUTER_API_KEY", "test")
 os.environ.setdefault("OPENALEX_API_KEY", "test")
 os.environ["FLASK_PORT"] = "5055"
 os.environ["DEBUG"] = "no"

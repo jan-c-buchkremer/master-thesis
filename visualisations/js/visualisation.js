@@ -499,6 +499,12 @@ export default class Visualization {
         // Parse docset from URL query parameter
         const urlParams = new URLSearchParams(window.location.search);
         const docsetHash = urlParams.get('docset');
+        // ?view=citation-network opens that view directly (the landing page links both views)
+        const view = urlParams.get('view');
+        if (view && d3.select(`#view-mode-selector option[value="${CSS.escape(view)}"]`).size()) {
+            this.initialViewMode = view;  // applied when the docset's state is reset on load
+            d3.select("#view-mode-selector").property("value", view);
+        }
 
         if (docsetHash) {
             // Fetch index to find the human readable name
@@ -589,8 +595,9 @@ export default class Visualization {
         this.activeEgoPaper = null;
         this.previousViewMode = null;
         this.currentTransform = d3.zoomIdentity;
-        this.currentViewMode = 'topic-landscape';
+        this.currentViewMode = this.initialViewMode || 'topic-landscape';
         this.lastViewMode = 'topic-landscape';
+        this.initialViewMode = null;
         this.citationScale = null;
         this.svg.call(this.zoom.transform, d3.zoomIdentity);
         d3.select("#paper-info-card").classed("active", false);

@@ -17,8 +17,22 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # WordNet for the lemmatizer in TopicModeling.py
 RUN python -m nltk.downloader -d /usr/local/share/nltk_data wordnet
 
+# curl for the Claude Code installer below
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # uid 1000 matches the host user, so bind-mounted directories stay writable on both sides
 RUN useradd --create-home --uid 1000 thesis
+
+# Claude Code CLI: cluster names and descriptions and the topics of the week are written by Claude through
+# `claude -p` (ClaudeCode.py) on the Claude subscription; it reads the token from CLAUDE_CODE_OAUTH_TOKEN.
+# Pinned, and no self-updates inside the container.
+ARG CLAUDE_CODE_VERSION=2.1.296
+USER thesis
+RUN curl -fsSL https://claude.ai/install.sh | bash -s ${CLAUDE_CODE_VERSION}
+USER root
+ENV PATH="/home/thesis/.local/bin:${PATH}" DISABLE_AUTOUPDATER=1
+
 WORKDIR /app
 COPY --chown=thesis:thesis . .
 RUN mkdir -p data models && chown thesis:thesis data models
@@ -27,6 +41,7 @@ USER thesis
 # One image, three roles (see the compose file in the infra repo):
 #   web (default)   gunicorn -c gunicorn.conf.py app:app
 #   worker          python worker.py      (downloads the SPECTER2 models into models/ on first start)
+#   trends          python -m trends ...  (the topics of the week, run by the timers in the infra repo)
 #   migrations      alembic upgrade head
 # data/ holds the processed docsets, models/ the SPECTER2 base model and adapter (worker only)
 VOLUME ["/app/data", "/app/models"]

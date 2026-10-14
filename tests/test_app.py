@@ -1,7 +1,7 @@
 """
 Route tests against the Flask app via test_client(). Response codes and shapes
 follow swagger.yaml. The app only queues jobs (the worker runs them), so nothing
-here touches SPARQL, OpenAlex, OpenRouter or the SPECTER2 model.
+here touches SPARQL, OpenAlex, Claude or the SPECTER2 model.
 """
 import os
 import re
